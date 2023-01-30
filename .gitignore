@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 bs_test
+wave_frames
