@@ -88,11 +88,11 @@ class BackgroundSnapshotsSolver:
         """Calculate the orthogonal background snapshots V_0"""
         u_init, A, D_init, b = self.init_simulation(self.background_velocity)
         D_0, U_0 = self.calculate_U_D(u_init, A, D_init, b)
-        M_0 = self.calculate_mass_matrix(D_0)
-        V_0 = U_0 @ np.linalg.inv(M_0)
+        R = self.calculate_mass_matrix(D_0)
+        V_0 = U_0 @ np.linalg.inv(R)
 
-        if not exists(self.data_folder + "M_0.np."):
-            np.save(self.data_folder + "M_0.npy", M_0)
+        if not exists(self.data_folder + "R_0.np."):
+            np.save(self.data_folder + "R_0.npy", R)
 
         return V_0
 
