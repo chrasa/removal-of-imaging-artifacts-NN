@@ -3,6 +3,7 @@ from dataclasses import dataclass
 @dataclass
 class SimulationSetup:
     """Class for defining the simulation properties"""
+    N: int = 512
     N_x: int = 512
     N_y: int = 512
     N_s: int = 50

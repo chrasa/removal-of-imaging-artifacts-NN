@@ -15,24 +15,9 @@ class BackgroundSnapshotsSolver:
     def __init__(self, setup: SimulationSetup):
 
         self.setup = setup
-        self.N = setup.N_x
-        self.N_s = setup.N_s
-        self.N_x = setup.N_x
-        self.N_y = setup.N_y
-        self.delta_x = setup.delta_x
-        self.N_x_im = setup.N_x_im
-        self.N_y_im = setup.N_y_im
-        self.O_x = setup.O_x
-        self.O_y = setup.O_y
-        self.Bsrc_file = setup.Bsrc_file 
 
         self.imaging_region_indices = self.get_imaging_region_indices()
-
-        self.background_velocity_value = setup.background_velocity_value
-        self.background_velocity = np.full(self.N**2, setup.background_velocity_value, dtype=np.float64)
-
-        self.tau = setup.tau
-        self.N_t = setup.N_t
+        self.background_velocity = np.full(self.setup.N**2, setup.background_velocity_value, dtype=np.float64)
         self.delta_t = setup.tau/20
 
         self.data_folder = "." + sep + "bs_test" + sep
@@ -52,27 +37,27 @@ class BackgroundSnapshotsSolver:
 
     def import_sources(self):
         
-        b = np.loadtxt(self.Bsrc_file, delimiter =',', dtype=np.float64)
-        np.reshape(b, (self.N_x * self.N_y, self.N_s))
+        b = np.loadtxt(self.setup.Bsrc_file, delimiter =',', dtype=np.float64)
+        np.reshape(b, (self.setup.N_x * self.setup.N_y, self.setup.N_s))
 
         return b
     
     def get_imaging_region_indices(self):
-        im_y_indices = range(self.O_y, self.O_y+self.N_y_im)
-        im_x_indices = range(self.O_x, self.O_x+self.N_x_im)
-        indices = [y*self.N_x + x for y in im_y_indices for x in im_x_indices] 
+        im_y_indices = range(self.setup.O_y, self.setup.O_y+self.setup.N_y_im)
+        im_x_indices = range(self.setup.O_x, self.setup.O_x+self.setup.N_x_im)
+        indices = [y*self.setup.N_x + x for y in im_y_indices for x in im_x_indices] 
 
         return indices
 
     @timeit 
     def init_simulation(self, c: np.array):
         # I_k is the identity matrix
-        I_k = sparse.identity(self.N)
+        I_k = sparse.identity(self.setup.N)
 
         # D_k is the N_x × N_y tridiagonal matrix which represents the boundary conditions. The D_k matrix is presented in Equation 6
-        D_k = (1/self.delta_x**2)*sparse.diags([1,-2,1],[-1,0,1], shape=(self.N,self.N), dtype=np.float64)
+        D_k = (1/self.setup.delta_x**2)*sparse.diags([1,-2,1],[-1,0,1], shape=(self.setup.N,self.setup.N), dtype=np.float64)
         D_k = sparse.csr_matrix(D_k)
-        D_k[0, 0] = -1 * (1/self.delta_x**2)
+        D_k[0, 0] = -1 * (1/self.setup.delta_x**2)
 
         # Equation 5
         L = sparse.kron(D_k, I_k) + sparse.kron(I_k, D_k)
@@ -84,7 +69,7 @@ class BackgroundSnapshotsSolver:
         A = (- C @ L @ C)
 
         # Equation 8
-        u = np.zeros((3, self.N_x * self.N_y, self.N_s), dtype=np.float64) # Stores past, current and future instances
+        u = np.zeros((3, self.setup.N_x * self.setup.N_y, self.setup.N_s), dtype=np.float64) # Stores past, current and future instances
 
         b = self.import_sources()
 
@@ -93,7 +78,7 @@ class BackgroundSnapshotsSolver:
         u[0] = (-0.5* self.delta_t**2 * A) @ b + b
 
         # Equation 10
-        D = np.zeros((2*self.N_t, self.N_s, self.N_s), dtype=np.float64)
+        D = np.zeros((2*self.setup.N_t, self.setup.N_s, self.setup.N_s), dtype=np.float64)
         D[0] = np.transpose(b) @ u[1]
 
         return u, A, D, b 
@@ -112,7 +97,7 @@ class BackgroundSnapshotsSolver:
         return V_0
 
     def find_indices(self,j):
-        ind_t = np.linspace(0, self.N_s, self.N_s) + self.N_s*j 
+        ind_t = np.linspace(0, self.setup.N_s, self.setup.N_s) + self.setup.N_s*j 
         ind_list = [int(x) for x in ind_t]
         return ind_list
 
@@ -125,10 +110,10 @@ class BackgroundSnapshotsSolver:
         ence medium) and D_0 (the data measured at the receivers).
         """
         nts = 20
-        T = (self.N_t * 2 - 1) * self.delta_t * nts
-        time = np.linspace(0, T, num=2*self.N_t*nts)
+        T = (self.setup.N_t * 2 - 1) * self.delta_t * nts
+        time = np.linspace(0, T, num=2*self.setup.N_t*nts)
 
-        U_0 = np.zeros((self.N_x_im*self.N_y_im, self.N_s, self.N_t))   # Can Fortran ordering be used already here?
+        U_0 = np.zeros((self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s, self.setup.N_t))   # Can Fortran ordering be used already here?
         U_0[:,:,0] = u[1][self.imaging_region_indices]      # Check if using a (sparse) projection matrix is faster?
         
         count_storage_D = 0
@@ -150,7 +135,7 @@ class BackgroundSnapshotsSolver:
                 count_storage_D += 1
                 #print(f"Count D = {count_storage_D}")
 
-                if i <= self.N_t*nts-1:
+                if i <= self.setup.N_t*nts-1:
                     U_0[:,:,index] = u[1][self.imaging_region_indices]
 
                     #print(f"U_0 current timestep: {index+1}/{self.N_t}")
@@ -162,7 +147,7 @@ class BackgroundSnapshotsSolver:
         np.save(self.data_folder + "U_0.npy", U_0)
         print(f"Saved U_0 of shape {U_0.shape}")
         
-        U_0 = np.reshape(U_0, (self.N_x_im * self.N_y_im, self.N_s * self.N_t),order='F')
+        U_0 = np.reshape(U_0, (self.setup.N_x_im * self.setup.N_y_im, self.setup.N_s * self.setup.N_t),order='F')
 
         #print(f"Count D = {count_storage_D}")
         #print(f"Count stage U_0 = {count_storage_U_0}")
@@ -171,16 +156,16 @@ class BackgroundSnapshotsSolver:
     @timeit
     def calculate_mass_matrix(self, D):
         """Calculate the Grammian matrix, also revered to as "Mass Matrix" using Block-Cholesky factorization"""
-        M = np.zeros((self.N_s*self.N_t, self.N_s*self.N_t), dtype=np.float64)
+        M = np.zeros((self.setup.N_s*self.setup.N_t, self.setup.N_s*self.setup.N_t), dtype=np.float64)
 
-        for i in range(self.N_t):
-            for j in range(self.N_t):
+        for i in range(self.setup.N_t):
+            for j in range(self.setup.N_t):
                 ind_i = self.find_indices(i)
                 ind_j = self.find_indices(j)
 
                 M[ind_i[0]:ind_i[-1],ind_j[0]:ind_j[-1]] = 0.5 * (D[abs(i-j)] + D[abs(i+j)])
 
-        R = mblockchol(M, self.N_s, self.N_t)
+        R = mblockchol(M, self.setup.N_s, self.setup.N_t)
 
         return R
     
