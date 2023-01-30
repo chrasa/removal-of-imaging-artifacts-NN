@@ -5,7 +5,7 @@ from os import path
 
 def plot_mass_matrix(D_0_path, tx_sensor, rx_sensor):
     D_0 = np.load(D_0_path)
-    print(f"Shape of M_0: {D_0.shape} (Time, Sensor, Sensor)")
+    print(f"Shape of M_0: {D_0.shape} (Time, TX-Sensor, RX-Sensor)")
 
     plt.plot(D_0[:,tx_sensor,rx_sensor])
     plt.title("Receiver Data")
