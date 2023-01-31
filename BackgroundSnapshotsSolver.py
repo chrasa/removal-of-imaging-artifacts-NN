@@ -31,8 +31,8 @@ class BackgroundSnapshotsSolver:
             np.save(self.data_folder + "V_0.npy", self.V_0)
         
         if not exists(self.data_folder + "I_0.np."):
-            M_0 = np.load(self.data_folder + "M_0.npy")
-            I_0 = self.calculate_imaging_func(M_0)
+            R_0 = np.load(self.data_folder + "R_0.npy")
+            I_0 = self.calculate_imaging_func(R_0)
             np.save(self.data_folder + "I_0.npy", I_0)
 
     def import_sources(self):
@@ -93,6 +93,9 @@ class BackgroundSnapshotsSolver:
 
         if not exists(self.data_folder + "R_0.np."):
             np.save(self.data_folder + "R_0.npy", R)
+
+        if not exists(self.data_folder + "D_0.np."):
+            np.save(self.data_folder + "D_0.npy", D_0)
 
         return V_0
 
@@ -191,7 +194,7 @@ class BackgroundSnapshotsSolver:
 
 
 def main():
-    sim_setup = SimulationSetup(N_t=6)
+    sim_setup = SimulationSetup(N_t=25)
 
     solver = BackgroundSnapshotsSolver(sim_setup)
 
