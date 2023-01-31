@@ -196,7 +196,7 @@ def normalize_image(image: np.array):
     return normalized
 
 def print_progress(progress, max, progress_bar_length=40):
-        title = f"\rFracture generator progress: {progress:5}/{max:5}: "
+        title = f"\rImages generated: {progress:5}/{max:5}: "
         success_rate = f" {(progress/max)*100:3.2f}%"
         number_of_progress_indicators = int(progress * progress_bar_length // (max))
 
@@ -205,6 +205,11 @@ def print_progress(progress, max, progress_bar_length=40):
 
 def main():
     n_images = 10
+
+    for i, arg in enumerate(sys.argv):
+        if arg == '-n':
+            n_images = int(sys.argv[i+1])
+
     fracture_setup = FractureSetup()
     generator = FractureGenerator(fracture_setup)
 
