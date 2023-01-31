@@ -1,11 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-#import matplotlib.image
-#import tensorflow as tf
 from scipy.stats import truncnorm, norm, uniform
 from scipy.signal import convolve2d as conv2
-#from PIL import Image
 from FractureSetup import FractureSetup
+import sys
 
 class FractureGenerator:
     def __init__(self, fracture_setup: FractureSetup = FractureSetup() ):
@@ -197,6 +195,13 @@ def normalize_image(image: np.array):
 
     return normalized
 
+def print_progress(progress, max, progress_bar_length=40):
+        title = f"\rFracture generator progress: {progress:5}/{max:5}: "
+        success_rate = f" {(progress/max)*100:3.2f}%"
+        number_of_progress_indicators = int(progress * progress_bar_length // (max))
+
+        sys.stdout.write(title + "[" + number_of_progress_indicators*"#" + (progress_bar_length - number_of_progress_indicators)*"-" + "]" + success_rate)
+
 
 def main():
     n_images = 10
@@ -204,12 +209,11 @@ def main():
     generator = FractureGenerator(fracture_setup)
 
     for i in range(n_images):
-        result = generator.generate_fractures()
+        print_progress(i+1, n_images)
+        image = generator.generate_fractures()
+        np.save(f"./images/im{i}.npy", image)
     
-        np.save(f"./images/im{i}.npy", result)
-
-    generator.plot_image("./images/im0.npy")
-
+    sys.stdout.write("\n")
 
 if __name__ == "__main__":
     main()
