@@ -8,55 +8,24 @@ from scipy.signal import convolve2d as conv2
 from FractureSetup import FractureSetup
 
 class FractureGenerator:
+    def __init__(self, fracture_setup: FractureSetup = FractureSetup() ):
 
-    def __init__(self,
-                 fracture_setup: FractureSetup,
-                 image_width: int,
-                 image_height: int,
-                 fractured_region_width: int,
-                 fractured_region_height: int,
-                 O_x: int,
-                 O_y: int,
-                 n_fractures: int,
-                 fracture_width,
-                 buffer_size: int,
-                 max_length: float = 50.0,
-                 min_length: float = 20.0,
-                 std_dev_length: float = 10.0,
-                 std_dev_angle: float = 30.0,
-                 mean_noise: float = 1.0,
-                 std_dev_noise: float = 0.2,
-                 max_iterations: int = 15,
-                 background_velocity: float = 1.0
-                 ):
+        self.setup = fracture_setup
 
-        self.image_height = image_height
-        self.image_width = image_width
-        self.fractured_region_height = fractured_region_height
-        self.fractured_region_width = fractured_region_width
-        self.O_x = O_x
-        self.O_y = O_y
-        self.n_fractures = n_fractures
-        self.fracture_width = fracture_width
-        self.buffer_size = buffer_size
-        self.max_length = max_length
-        self.min_length = min_length
-        self.background_velocity = background_velocity
+        mean_length = (self.setup.max_length + self.setup.max_length) / 2
+        a_length = (self.setup.min_length - mean_length) / self.setup.std_dev_length
+        b_length = (self.setup.max_length - mean_length) / self.setup.std_dev_length
 
-        mean_length = (max_length + max_length) / 2
-        a_length = (min_length - mean_length) / std_dev_length
-        b_length = (max_length - mean_length) / std_dev_length
+        self.length_distribution = truncnorm(a=a_length, b=b_length, loc=mean_length, scale=self.setup.std_dev_length)
+        #self.length_distribution = uniform(loc=self.setup.min_length, scale=self.setup.max_length)
+        self.angle_distribution = norm(loc=-90, scale=self.setup.std_dev_angle)
 
-        self.length_distribution = truncnorm(a=a_length, b=b_length, loc=mean_length, scale=std_dev_length)
-        #self.length_distribution = uniform(loc=min_length, scale=max_length)
-        self.angle_distribution = norm(loc=-90, scale=std_dev_angle)
-
-        self.x_low = self.O_x
-        self.x_high = self.x_low + self.fractured_region_width
+        self.x_low = self.setup.O_x
+        self.x_high = self.x_low + self.setup.fractured_region_width
 
 
-        self.y_low = self.O_y
-        self.y_high = self.y_low + self.fractured_region_height
+        self.y_low = self.setup.O_y
+        self.y_high = self.y_low + self.setup.fractured_region_height
 
         a_low = (0.3 - 0.45) / 0.05
         b_low = (0.6 - 0.45) / 0.05 
@@ -67,20 +36,15 @@ class FractureGenerator:
         self.high_velocity_modifier = truncnorm(a_high, b_high, loc=2.25, scale=0.25)
         self.modifier_distributions = [self.low_velocity_modifier, self.high_velocity_modifier]
 
-        self.mean_noise = mean_noise
-        self.std_dev_noise = std_dev_noise
-
-        self.max_iterations = max_iterations
-
     def generate_fractures(self):
-        fracture_image = np.full((self.image_height, self.image_width), self.background_velocity)
-        for _ in range(self.n_fractures):
+        fracture_image = np.full((self.setup.image_height, self.setup.image_width), self.setup.background_velocity)
+        for _ in range(self.setup.n_fractures):
             n_iterations = 0
             fracture_is_valid = False
             selected_modifier = np.random.choice(self.modifier_distributions)
             modifier_value = selected_modifier.rvs()
 
-            while (not fracture_is_valid) and (n_iterations < self.max_iterations): 
+            while (not fracture_is_valid) and (n_iterations < self.setup.max_iterations): 
                 fracture_length = self.length_distribution.rvs().astype(int)
                 fracture_angle = self.angle_distribution.rvs()
                 pixels_to_fracture = []
@@ -130,26 +94,26 @@ class FractureGenerator:
                 raise RuntimeError("Unable to fit fracture in image")
 
         # Produce the resulting image
-        fracture_image[fracture_image == -1] = self.background_velocity # Remove the buffer
+        fracture_image[fracture_image == -1] = self.setup.background_velocity # Remove the buffer
         # fracture_image = self._blur_fracture_edges(fracture_image)
         # fracture_image = self._add_noise(fracture_image, 1, 0.1)
         # fracture_image = tf.convert_to_tensor(fracture_image)
         # resulting_image = tf.math.add(image, fracture_image)
-        fracture_image = fracture_image.reshape(self.image_width*self.image_height)
+        fracture_image = fracture_image.reshape(self.setup.image_width*self.setup.image_height)
 
         return fracture_image
     
     def _create_buffer(self, image, pixels_to_fracture):
         for x, y in pixels_to_fracture:
-            for i in range(x - self.buffer_size, x + self.buffer_size):
-                for j in range(y - self.buffer_size, y + self.buffer_size):
+            for i in range(x - self.setup.buffer_size, x + self.setup.buffer_size):
+                for j in range(y - self.setup.buffer_size, y + self.setup.buffer_size):
                     if not self._out_of_bounds(i, j):
                         image[j, i] = -1
 
     def _fracture_pixel(self, image, x, y, modifier_value):
-        for i in range(x-int(self.fracture_width/2), x+int(self.fracture_width/2)):
-            for j in range(y-int(self.fracture_width/2), y+int(self.fracture_width/2)):
-                image[j, i] = self.background_velocity*modifier_value
+        for i in range(x-int(self.setup.fracture_width/2), x+int(self.setup.fracture_width/2)):
+            for j in range(y-int(self.setup.fracture_width/2), y+int(self.setup.fracture_width/2)):
+                image[j, i] = self.setup.background_velocity*modifier_value
     
     def _blur_fracture_edges(self, image):
         convolved = image.copy()
@@ -162,13 +126,13 @@ class FractureGenerator:
         return convolved
 
     def _out_of_bounds(self, x, y):
-        return x < self.O_x or \
-               x >= self.O_x + self.fractured_region_width or \
-               y < self.O_y or \
-               y >= self.O_y + self.fractured_region_height
+        return x < self.setup.O_x or \
+               x >= self.setup.O_x + self.setup.fractured_region_width or \
+               y < self.setup.O_y or \
+               y >= self.setup.O_y + self.setup.fractured_region_height
 
     def _sample_coordinates(self, current_sample_iteration: int):
-        if current_sample_iteration > self.max_iterations:
+        if current_sample_iteration > self.setup.max_iterations:
             raise RuntimeError("Unable to fit fracture in image")
 
         xs = int(np.random.uniform(self.x_low, self.x_high))
@@ -189,8 +153,8 @@ class FractureGenerator:
             return False
 
     def _collides_with_fracture(self, image, x, y):
-        collides = image[y, x] < self.background_velocity and image[y, x] > -1 \
-            or image[y, x] > self.background_velocity
+        collides = image[y, x] < self.setup.background_velocity and image[y, x] > -1 \
+            or image[y, x] > self.setup.background_velocity
 
         return collides
 
@@ -198,8 +162,8 @@ class FractureGenerator:
         return image[y, x] == -1
 
     def _add_noise(self, image: np.array, mean_noise: int, std_dev_noise: int):
-        gauss_noise = np.random.normal(loc=self.mean_noise,
-                                       scale=self.std_dev_noise,
+        gauss_noise = np.random.normal(loc=self.setup.mean_noise,
+                                       scale=self.setup.std_dev_noise,
                                        size=image.size
                                        ).astype(np.float32)
 
@@ -219,7 +183,7 @@ class FractureGenerator:
 
     def plot_image(self, image_path):
         image = np.load(image_path)
-        image = image.reshape(self.image_height, self.image_width, 1)
+        image = image.reshape(self.setup.image_height, self.setup.image_width, 1)
         plt.gray()
         # plt.imshow(tf.squeeze(image))
         plt.imshow(np.squeeze(image))
@@ -235,56 +199,14 @@ def normalize_image(image: np.array):
 
 
 def main():
-    # Specify parameters
-    image_height = 512
-    image_width = 512
-    fractured_region_height = 350
-    fractured_region_width = 175
-    O_x = 100
-    O_y = 81
-    n_fractures = 4
-    fracture_width = 4
-    buffer_size = 40 # space between fractures
-    mean_noise = 1.0
-    std_dev_noise = 0.2
-    max_length = 50
-    min_length = 10
-    std_dev_length = 10
-    std_dev_angle = 30.0
-    mean_noise = 1.0
-    std_dev_noise = 0.2
-    max_iterations = 15
-    n_images_to_generate = 10
-    background_velocity = 1000
+    n_images = 10
+    fracture_setup = FractureSetup()
+    generator = FractureGenerator(fracture_setup)
 
-    generator = FractureGenerator(image_width,
-                                  image_height,
-                                  fractured_region_width,
-                                  fractured_region_height,
-                                  O_x,
-                                  O_y,
-                                  n_fractures,
-                                  fracture_width,
-                                  buffer_size,
-                                  max_length,
-                                  min_length,
-                                  std_dev_length,
-                                  std_dev_angle,
-                                  mean_noise,
-                                  std_dev_noise,
-                                  max_iterations,
-                                  background_velocity)
-
-    for i in range(n_images_to_generate):
+    for i in range(n_images):
         result = generator.generate_fractures()
     
-        # result = normalize_image(result)
-        # result = np.expand_dims(result, 2)
-        # Save the images
-        np.save(
-            f"./images/im{i}.npy",
-            result
-        )
+        np.save(f"./images/im{i}.npy", result)
 
     generator.plot_image("./images/im0.npy")
 
