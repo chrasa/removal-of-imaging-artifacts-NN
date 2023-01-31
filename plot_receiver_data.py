@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from os import path
 
-def plot_mass_matrix(D_0_path, tx_sensor, rx_sensor):
+def plot_reciever_data(D_0_path, tx_sensor, rx_sensor):
     D_0 = np.load(D_0_path)
     print(f"Shape of M_0: {D_0.shape} (Time, TX-Sensor, RX-Sensor)")
 
@@ -24,4 +24,4 @@ if __name__ == "__main__":
             tx_sensor = int(sys.argv[i+1])
         elif arg == '-rx':
             rx_sensor = int(sys.argv[i+1])
-    plot_mass_matrix(D_0_path, tx_sensor, rx_sensor)
+    plot_reciever_data(D_0_path, tx_sensor, rx_sensor)
