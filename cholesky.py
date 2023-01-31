@@ -83,5 +83,10 @@ if __name__ == '__main__':
     print("Result of function:")
     print(R)
 
-    print("\nCheck R.T * R to see if correct (--> should be M exactly):")
-    print(np.matmul(R.T,R))
+    result = np.matmul(R.T,R)
+
+    threshold = np.full_like(M, 1e-14)
+    error = np.abs(np.subtract(M, result))
+
+    assert (error < threshold).all()
+    print("\nR.T * R = M")
