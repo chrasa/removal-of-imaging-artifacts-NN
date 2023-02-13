@@ -17,5 +17,5 @@ if __name__ == "__main__":
 
     for i, arg in enumerate(sys.argv):
         if arg == '-p':
-            fracture_path = int(sys.argv[i+1])
+            fracture_path = sys.argv[i+1]
     plot_fracture(fracture_path)
