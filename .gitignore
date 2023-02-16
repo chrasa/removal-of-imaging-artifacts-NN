@@ -130,3 +130,5 @@ dmypy.json
 
 bs_test
 wave_frames
+*.npy
+fracture/images
