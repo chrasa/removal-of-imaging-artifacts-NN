@@ -100,9 +100,10 @@ class RTM:
         source_idx = 25
         for time_idx in range(Nt):
             self.__print_benchmark_progress(time_idx+1, Nt)
-            u[PAST,:,source_idx] = u[PRESENT,:,source_idx]
-            u[PRESENT,:,source_idx] = u[FUTURE,:,source_idx]
-            u[FUTURE,:,source_idx] = factor@u[PRESENT,:,source_idx] - u[PAST,:,source_idx] + self.delta_t**2 *  B_delta @ D_0[time_idx,:,source_idx]
+            u[PAST,:,:] = u[PRESENT,:,:]
+            u[PRESENT,:,:] = u[FUTURE,:,:]
+            # u[FUTURE,:,source_idx] = factor@u[PRESENT,:,source_idx] - u[PAST,:,source_idx] + self.delta_t**2 *  B_delta @ D_0[time_idx,:,source_idx]
+            u[FUTURE,:,:] = factor@u[PRESENT,:,:] - u[PAST,:,:] + self.delta_t**2 *  B_delta @ D_0[time_idx,:,:]
 
             if (time_idx % self.nts) == 0:
                 U[int(time_idx/self.nts),:] = u[FUTURE,:,source_idx]
