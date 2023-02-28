@@ -21,7 +21,7 @@ FUTURE = 0
 
 Array = TypeVar('Array', numpy.array, cupy.array)
 
-class WaveSolver:
+class RtmWaveSolver:
 
     def __init__(self, setup: SimulationSetup, gpu: bool=False):
 
@@ -32,6 +32,7 @@ class WaveSolver:
         self.imaging_region_indices = self.get_imaging_region_indices()
         self.background_velocity = self.xp.full(self.setup.N**2, setup.background_velocity_value, dtype=self.xp.float64)
         self.delta_t = setup.tau/20
+        self.memmap_order = 'C'
 
         self.data_folder = "." + sep + "bs_test" + sep    
 
@@ -100,7 +101,7 @@ class WaveSolver:
         return u, A, D, b 
 
     @timeit
-    def calculate_U0_and_D0(self, path_to_c):
+    def calculate_U_and_D(self, path_to_c):
         """Calculate the orthogonal background snapshots V_0"""
         c = self.xp.load(path_to_c)
         c = self.xp.squeeze(c)
@@ -112,15 +113,28 @@ class WaveSolver:
         # plt.show()
         # exit()
         u_init, A, D_init, b = self.init_simulation(c)
-        D_0, U_0 = self.calculate_U_D(u_init, A, D_init, b)
+        D_0, U_0, D_fine = self.__calculate_U_D(u_init, A, D_init, b)
 
         self.xp.save(self.data_folder + "D_0.npy", D_0)
-        self.xp.save(self.data_folder + "U_0.npy", U_0)
+        #self.xp.save(self.data_folder + "U_0.npy", U_0)
+        self.xp.save(self.data_folder + "D_fine.npy", D_fine)
 
-        return D_0, U_0
+        return D_0
+    
+    @timeit
+    def calculate_U0(self):
+        """Calculate the orthogonal background snapshots V_0"""
+        u_init, A, D_init, b = self.init_simulation(self.background_velocity)
+        D_0, U_0, D_fine = self.__calculate_U_D(u_init, A, D_init, b)
+
+        # self.xp.save(self.data_folder + "D_0.npy", D_0)
+        # self.xp.save(self.data_folder + "U_0.npy", U_0)
+        # self.xp.save(self.data_folder + "D_fine.npy", D_fine)
+
+        return D_0
 
     @timeit
-    def calculate_U_D(self, u, A, D, b):
+    def __calculate_U_D(self, u, A, D, b):
         """Calculate wave fields in the medium and the data at the receivers
 
         Solve the wave equation for a reference wave speed c0 without any fractures by using a finite-
@@ -128,11 +142,13 @@ class WaveSolver:
         ence medium) and D_0 (the data measured at the receivers).
         """
         nts = 20
+        D_fine = self.xp.zeros((2*self.setup.N_t*nts, self.setup.N_s, self.setup.N_s), dtype=self.xp.float64)
         T = (self.setup.N_t * 2 - 1) * self.delta_t * nts
         time = self.xp.linspace(0, T, num=2*self.setup.N_t*nts)
 
-        U_0 = self.xp.zeros((self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s, self.setup.N_t))   # Can Fortran ordering be used already here?
-        U_0[:,:,0] = u[1][self.imaging_region_indices]      # Check if using a (sparse) projection matrix is faster?
+        # U_0 = self.xp.zeros((self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s, self.setup.N_t))   # Can Fortran ordering be used already here?
+        U_0 = numpy.memmap("U_0.npy", numpy.float64, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
+        U_0[0,:,:] = cupy.asnumpy(u[PRESENT])      # Check if using a (sparse) projection matrix is faster?
         
         count_storage_D = 0
         count_storage_U_0 = 0
@@ -145,31 +161,38 @@ class WaveSolver:
             #te = ti.time()
             #print(f'Function:if Execution time:{(te -ts):10.2f}s')
 
+            D_fine[i] = self.xp.transpose(b) @ u[PRESENT]
+            D_fine[i] = 0.5*(D_fine[i].T + D_fine[i])
+
             if (i % nts) == 0:
                 index = int(i/nts)
-                D[index] = self.xp.transpose(b) @ u[1]
+                D[index] = self.xp.transpose(b) @ u[PRESENT]
                 D[index] = 0.5*(D[index].T + D[index])
 
                 count_storage_D += 1
                 #print(f"Count D = {count_storage_D}")
 
-                if i <= self.setup.N_t*nts-1:
-                    U_0[:,:,index] = u[PRESENT][self.imaging_region_indices]
+                if self.gpu:
+                    u_on_cpu = cupy.asnumpy(u[PRESENT])
+                    U_0[index,:,:] = u_on_cpu
+                else:
+                    U_0[index,:,:] = u[PRESENT][self.imaging_region_indices]
 
-                    #print(f"U_0 current timestep: {index+1}/{self.N_t}")
+                #print(f"U_0 current timestep: {index+1}/{self.N_t}")
 
-                    count_storage_U_0 += 1
+                count_storage_U_0 += 1
 
 
         sys.stdout.write("\n")
+        U_0.flush()
         # self.xp.save(self.data_folder + "U_0.npy", U_0)
         # print(f"Saved U_0 of shape {U_0.shape}")
         
-        U_0 = self.xp.reshape(U_0, (self.setup.N_x_im * self.setup.N_y_im, self.setup.N_s * self.setup.N_t),order='F')
+        # U_0 = self.xp.reshape(U_0, (self.setup.N_x_im * self.setup.N_y_im, self.setup.N_s * self.setup.N_t),order='F')
 
         #print(f"Count D = {count_storage_D}")
         #print(f"Count stage U_0 = {count_storage_U_0}")
-        return D, U_0
+        return D, U_0, D_fine
 
 
     def __print_benchmark_progress(self, progress, max, progress_bar_length=40):
@@ -181,7 +204,7 @@ class WaveSolver:
 
 
 def main():
-    N_t = 10
+    N_t = 70
     use_gpu = False
 
     for i, arg in enumerate(sys.argv):
@@ -191,8 +214,8 @@ def main():
             use_gpu = True
 
     sim_setup = SimulationSetup(N_t=N_t)
-    solver = WaveSolver(sim_setup, use_gpu)
-    solver.calculate_U0_and_D0("./fracture/images/circle.npy")
+    solver = RtmWaveSolver(sim_setup, use_gpu)
+    solver.calculate_U0()
     
     # test = solver.import_sources()
     # print(test.shape)
