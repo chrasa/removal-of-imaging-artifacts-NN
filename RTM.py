@@ -29,6 +29,7 @@ class RTM:
         self.background_velocity = self.xp.full(self.setup.N**2, setup.background_velocity_value, dtype=self.xp.float64)
         self.nts = 20
         self.delta_t = setup.tau/self.nts
+        self.memmap_order = 'C'
 
         self.data_folder = "." + sep + "bs_test" + sep    
 
@@ -90,14 +91,14 @@ class RTM:
         Nt = D_0.shape[0]
 
         u = self.xp.zeros([3,512*512,self.setup.N_s])
-        U = self.xp.zeros([int(Nt/self.nts),self.setup.N*self.setup.N])
+        # U = self.xp.zeros([int(Nt/self.nts),self.setup.N*self.setup.N])
+        U = numpy.memmap("U_RT.npy", numpy.float64, 'w+', shape=(int(Nt/self.nts),self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
 
         B_delta = self.generate_sources()
         A = self.get_A()
 
         factor = 2*self.scipy.sparse.identity(self.setup.N**2) - self.delta_t**2 * A
 
-        source_idx = 25
         for time_idx in range(Nt):
             self.__print_benchmark_progress(time_idx+1, Nt)
             u[PAST,:,:] = u[PRESENT,:,:]
@@ -106,10 +107,15 @@ class RTM:
             u[FUTURE,:,:] = factor@u[PRESENT,:,:] - u[PAST,:,:] + self.delta_t**2 *  B_delta @ D_0[time_idx,:,:]
 
             if (time_idx % self.nts) == 0:
-                U[int(time_idx/self.nts),:] = u[FUTURE,:,source_idx]
+                if self.gpu:
+                    u_on_cpu = cupy.asnumpy(u[FUTURE,:,:])
+                    U[int(time_idx/self.nts),:,:] = u_on_cpu
+                else:
+                    U[int(time_idx/self.nts),:,:] = u[FUTURE,:,:]
         
         sys.stdout.write("\n")
-        self.xp.save("RTM_U.npy", U)
+        #self.xp.save("RTM_U.npy", U)
+        U.flush()
         
 
 
@@ -122,7 +128,7 @@ class RTM:
 
 
 def main():
-    N_t = 10
+    N_t = 70
     use_gpu = False
 
     for i, arg in enumerate(sys.argv):
