@@ -34,7 +34,7 @@ class RtmWaveSolver:
         self.delta_t = setup.tau/20
         self.memmap_order = 'C'
 
-        self.data_folder = "." + sep + "bs_test" + sep    
+        self.data_folder = "." + sep + "rtm_data" + sep    
 
     def setup_numpy_and_scipy(self, gpu):
         if cupy.cuda.runtime.getDeviceCount() > 0 and gpu:
@@ -122,16 +122,32 @@ class RtmWaveSolver:
         return D_0
     
     @timeit
-    def calculate_U0(self):
-        """Calculate the orthogonal background snapshots V_0"""
-        u_init, A, D_init, b = self.init_simulation(self.background_velocity)
-        D_0, U_0, D_fine = self.__calculate_U_D(u_init, A, D_init, b)
+    def calculate_U0(self, file_name="U_0.npy"):
+        """Calculate the orthogonal background snapshots U_0"""
+        u, A, _, _ = self.init_simulation(self.background_velocity)
 
-        # self.xp.save(self.data_folder + "D_0.npy", D_0)
-        # self.xp.save(self.data_folder + "U_0.npy", U_0)
-        # self.xp.save(self.data_folder + "D_fine.npy", D_fine)
+        nts = 20
+        T = (self.setup.N_t * 2 - 1) * self.delta_t * nts
+        time = self.xp.linspace(0, T, num=2*self.setup.N_t*nts)
 
-        return D_0
+        U_0 = numpy.memmap(self.data_folder+file_name, numpy.float64, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
+        U_0[0,:,:] = cupy.asnumpy(u[PRESENT])      # Check if using a (sparse) projection matrix is faster?
+        
+        for i in range(1,len(time)):
+            self.__print_benchmark_progress(i+1, len(time))
+            u[PAST] = u[PRESENT] 
+            u[PRESENT] = u[FUTURE] 
+            u[FUTURE] = (-self.delta_t**2 * A) @ u[PRESENT] - u[PAST] + 2*u[PRESENT]
+
+            if (i % nts) == 0:
+                index = int(i/nts)
+
+                if self.gpu:
+                    u_on_cpu = cupy.asnumpy(u[PRESENT])
+                    U_0[index,:,:] = u_on_cpu
+                else:
+                    U_0[index,:,:] = u[PRESENT]
+
 
     @timeit
     def __calculate_U_D(self, u, A, D, b):
@@ -147,7 +163,7 @@ class RtmWaveSolver:
         time = self.xp.linspace(0, T, num=2*self.setup.N_t*nts)
 
         # U_0 = self.xp.zeros((self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s, self.setup.N_t))   # Can Fortran ordering be used already here?
-        U_0 = numpy.memmap("U_0.npy", numpy.float64, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
+        U_0 = numpy.memmap("U.npy", numpy.float64, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
         U_0[0,:,:] = cupy.asnumpy(u[PRESENT])      # Check if using a (sparse) projection matrix is faster?
         
         count_storage_D = 0
@@ -156,10 +172,7 @@ class RtmWaveSolver:
             self.__print_benchmark_progress(i+1, len(time))
             u[PAST] = u[PRESENT] 
             u[PRESENT] = u[FUTURE] 
-            #ts = ti.time() 
             u[FUTURE] = (-self.delta_t**2 * A) @ u[PRESENT] - u[PAST] + 2*u[PRESENT]
-            #te = ti.time()
-            #print(f'Function:if Execution time:{(te -ts):10.2f}s')
 
             D_fine[i] = self.xp.transpose(b) @ u[PRESENT]
             D_fine[i] = 0.5*(D_fine[i].T + D_fine[i])
@@ -216,6 +229,7 @@ def main():
     sim_setup = SimulationSetup(N_t=N_t)
     solver = RtmWaveSolver(sim_setup, use_gpu)
     solver.calculate_U0()
+    # solver.calculate_U_and_D("fracture/images/circle.npy")
     
     # test = solver.import_sources()
     # print(test.shape)
