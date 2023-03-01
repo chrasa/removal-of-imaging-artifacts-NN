@@ -115,8 +115,7 @@ class RtmWaveSolver:
         u_init, A, D_init, b = self.init_simulation(c)
         D_0, U_0, D_fine = self.__calculate_U_D(u_init, A, D_init, b)
 
-        self.xp.save(self.data_folder + "D_0.npy", D_0)
-        #self.xp.save(self.data_folder + "U_0.npy", U_0)
+        self.xp.save(self.data_folder + "D.npy", D_0)
         self.xp.save(self.data_folder + "D_fine.npy", D_fine)
 
         return D_0
@@ -124,6 +123,7 @@ class RtmWaveSolver:
     @timeit
     def calculate_U0(self, file_name="U_0.npy"):
         """Calculate the orthogonal background snapshots U_0"""
+        print("Calculating U0")
         u, A, _, _ = self.init_simulation(self.background_velocity)
 
         nts = 20
@@ -157,13 +157,14 @@ class RtmWaveSolver:
         difference time domain method and collect the matrices U_0 (the wave field snapshots in the refer-
         ence medium) and D_0 (the data measured at the receivers).
         """
+        print("Calculating U and D")
         nts = 20
         D_fine = self.xp.zeros((2*self.setup.N_t*nts, self.setup.N_s, self.setup.N_s), dtype=self.xp.float64)
         T = (self.setup.N_t * 2 - 1) * self.delta_t * nts
         time = self.xp.linspace(0, T, num=2*self.setup.N_t*nts)
 
         # U_0 = self.xp.zeros((self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s, self.setup.N_t))   # Can Fortran ordering be used already here?
-        U_0 = numpy.memmap("U.npy", numpy.float64, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
+        U_0 = numpy.memmap(self.data_folder+"U.npy", numpy.float64, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
         U_0[0,:,:] = cupy.asnumpy(u[PRESENT])      # Check if using a (sparse) projection matrix is faster?
         
         count_storage_D = 0
@@ -198,13 +199,6 @@ class RtmWaveSolver:
 
         sys.stdout.write("\n")
         U_0.flush()
-        # self.xp.save(self.data_folder + "U_0.npy", U_0)
-        # print(f"Saved U_0 of shape {U_0.shape}")
-        
-        # U_0 = self.xp.reshape(U_0, (self.setup.N_x_im * self.setup.N_y_im, self.setup.N_s * self.setup.N_t),order='F')
-
-        #print(f"Count D = {count_storage_D}")
-        #print(f"Count stage U_0 = {count_storage_U_0}")
         return D, U_0, D_fine
 
 
@@ -228,8 +222,8 @@ def main():
 
     sim_setup = SimulationSetup(N_t=N_t)
     solver = RtmWaveSolver(sim_setup, use_gpu)
-    solver.calculate_U0()
-    # solver.calculate_U_and_D("fracture/images/circle.npy")
+    # solver.calculate_U0()
+    solver.calculate_U_and_D("fracture/images/circle.npy")
     
     # test = solver.import_sources()
     # print(test.shape)
