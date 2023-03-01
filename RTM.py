@@ -31,7 +31,7 @@ class RTM:
         self.delta_t = setup.tau/self.nts
         self.memmap_order = 'C'
 
-        self.data_folder = "." + sep + "bs_test" + sep    
+        self.data_folder = "." + sep + "rtm_data" + sep    
 
     def setup_numpy_and_scipy(self, gpu):
         if cupy.cuda.runtime.getDeviceCount() > 0 and gpu:
@@ -80,9 +80,9 @@ class RTM:
         return A
 
     @timeit
-    def calculate_U(self):
+    def calculate_U_RT(self, filename="U_RT.npy"):
         # Load D
-        D_0 = self.xp.load("./bs_test/D_fine.npy")
+        D_0 = self.xp.load(self.data_folder + "D_fine.npy")
 
         # Reverse the time 
         D_0 = self.xp.flip(D_0, 0)
@@ -92,7 +92,7 @@ class RTM:
 
         u = self.xp.zeros([3,512*512,self.setup.N_s])
         # U = self.xp.zeros([int(Nt/self.nts),self.setup.N*self.setup.N])
-        U = numpy.memmap("U_RT.npy", numpy.float64, 'w+', shape=(int(Nt/self.nts),self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
+        U = numpy.memmap(self.data_folder + filename, numpy.float64, 'w+', shape=(int(Nt/self.nts),self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
 
         B_delta = self.generate_sources()
         A = self.get_A()
@@ -103,7 +103,6 @@ class RTM:
             self.__print_benchmark_progress(time_idx+1, Nt)
             u[PAST,:,:] = u[PRESENT,:,:]
             u[PRESENT,:,:] = u[FUTURE,:,:]
-            # u[FUTURE,:,source_idx] = factor@u[PRESENT,:,source_idx] - u[PAST,:,source_idx] + self.delta_t**2 *  B_delta @ D_0[time_idx,:,source_idx]
             u[FUTURE,:,:] = factor@u[PRESENT,:,:] - u[PAST,:,:] + self.delta_t**2 *  B_delta @ D_0[time_idx,:,:]
 
             if (time_idx % self.nts) == 0:
@@ -139,7 +138,7 @@ def main():
 
     sim_setup = SimulationSetup(N_t=N_t)
     solver = RTM(sim_setup, use_gpu)
-    solver.calculate_U()
+    solver.calculate_U_RT()
 
 
 if __name__ == "__main__":

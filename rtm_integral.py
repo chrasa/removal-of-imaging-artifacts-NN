@@ -7,9 +7,9 @@ from matplotlib import pyplot as plt
 
 setup = SimulationSetup()
 
-U_rtm = np.memmap("U_RT.npy", np.float64, 'r', shape=(2*setup.N_t, setup.N*setup.N, setup.N_s))
-U_0 = np.memmap("U_0.npy", np.float64, 'r', shape=(2*setup.N_t,setup.N*setup.N, setup.N_s))
-U = np.memmap("U.npy", np.float64, 'r', shape=(2*setup.N_t,setup.N*setup.N, setup.N_s))
+U_rtm = np.memmap("rtm_data/U_RT.npy", np.float64, 'r', shape=(2*setup.N_t, setup.N*setup.N, setup.N_s))
+U_0 = np.memmap("rtm_data/U_0.npy", np.float64, 'r', shape=(2*setup.N_t,setup.N*setup.N, setup.N_s))
+U = np.memmap("rtm_data/U.npy", np.float64, 'r', shape=(2*setup.N_t,setup.N*setup.N, setup.N_s))
 
 I = np.zeros(setup.N*setup.N, dtype=np.float64)
 
@@ -61,13 +61,13 @@ print("Load arrays to memory..")
 # U_0_temp = np.array(U_0[:,:,si])
 # U_temp = np.array(U[:,:,si])
 
-U_rtm_temp = np.load("U_rtm_temp.npy")
-U_0_temp = np.load("U_0_temp.npy")
-U_temp = np.load("U_temp.npy")
+U_rtm_temp = np.load("rtm_data/temp/U_RT.npy")
+U_0_temp = np.load("rtm_data/temp/U_0.npy")
+U_temp = np.load("rtm_data/temp/U.npy")
 
-# np.save("U_rtm_temp.npy", U_rtm_temp)
-# np.save("U_0_temp.npy", U_0_temp)
-# np.save("U_temp.npy", U_temp)
+# np.save("rtm_data/temp/U_RT.npy", U_rtm_temp)
+# np.save("rtm_data/temp/U_0.npy", U_0_temp)
+# np.save("rtm_data/temp/U.npy", U_temp)
 
 print("Calculating")
 for tidx in range(setup.N_t):
