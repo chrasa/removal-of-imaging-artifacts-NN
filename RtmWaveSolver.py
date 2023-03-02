@@ -106,65 +106,38 @@ class RtmWaveSolver:
         c = self.xp.load(path_to_c)
         c = self.xp.squeeze(c)
 
-        # image = self.xp.reshape(c, (self.setup.N_x, self.setup.N_y))
-        # image = self.xp.reshape(c[self.imaging_region_indices], (self.setup.N_x_im, self.setup.N_y_im))
-        # plt.gray()
-        # plt.imshow(image)
-        # plt.show()
-        # exit()
         u_init, A, D_init, b = self.init_simulation(c)
-        D_0, U_0, D_fine = self.__calculate_U_D(u_init, A, D_init, b)
+        D, D_fine = self.__calculate_U_D(u_init, A, D_init, b)
 
-        self.xp.save(self.data_folder + "D.npy", D_0)
+        self.xp.save(self.data_folder + "D.npy", D)
         self.xp.save(self.data_folder + "D_fine.npy", D_fine)
-
-        return D_0
     
     @timeit
-    def calculate_U0(self, file_name="U_0.npy"):
+    def calculate_U0_D0(self, file_name="U_0.npy"):
         """Calculate the orthogonal background snapshots U_0"""
-        print("Calculating U0")
-        u, A, _, _ = self.init_simulation(self.background_velocity)
 
-        nts = 20
-        T = (self.setup.N_t * 2 - 1) * self.delta_t * nts
-        time = self.xp.linspace(0, T, num=2*self.setup.N_t*nts)
+        u_init, A, D_init, b = self.init_simulation(self.background_velocity)
+        D_0, D_0_fine = self.__calculate_U_D(u_init, A, D_init, b, file_name)
 
-        U_0 = numpy.memmap(self.data_folder+file_name, numpy.float64, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
-        U_0[0,:,:] = cupy.asnumpy(u[PRESENT])      # Check if using a (sparse) projection matrix is faster?
-        
-        for i in range(1,len(time)):
-            self.__print_benchmark_progress(i+1, len(time))
-            u[PAST] = u[PRESENT] 
-            u[PRESENT] = u[FUTURE] 
-            u[FUTURE] = (-self.delta_t**2 * A) @ u[PRESENT] - u[PAST] + 2*u[PRESENT]
-
-            if (i % nts) == 0:
-                index = int(i/nts)
-
-                if self.gpu:
-                    u_on_cpu = cupy.asnumpy(u[PRESENT])
-                    U_0[index,:,:] = u_on_cpu
-                else:
-                    U_0[index,:,:] = u[PRESENT]
+        self.xp.save(self.data_folder + "D_0.npy", D_0)
+        self.xp.save(self.data_folder + "D_0_fine.npy", D_0_fine)
 
 
     @timeit
-    def __calculate_U_D(self, u, A, D, b):
+    def __calculate_U_D(self, u, A, D, b, U_file_name="U.npy"):
         """Calculate wave fields in the medium and the data at the receivers
 
         Solve the wave equation for a reference wave speed c0 without any fractures by using a finite-
         difference time domain method and collect the matrices U_0 (the wave field snapshots in the refer-
         ence medium) and D_0 (the data measured at the receivers).
         """
-        print("Calculating U and D")
         nts = 20
         D_fine = self.xp.zeros((2*self.setup.N_t*nts, self.setup.N_s, self.setup.N_s), dtype=self.xp.float64)
         T = (self.setup.N_t * 2 - 1) * self.delta_t * nts
         time = self.xp.linspace(0, T, num=2*self.setup.N_t*nts)
 
         # U_0 = self.xp.zeros((self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s, self.setup.N_t))   # Can Fortran ordering be used already here?
-        U_0 = numpy.memmap(self.data_folder+"U.npy", numpy.float64, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
+        U_0 = numpy.memmap(self.data_folder+U_file_name, numpy.float64, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s), order=self.memmap_order)
         U_0[0,:,:] = cupy.asnumpy(u[PRESENT])      # Check if using a (sparse) projection matrix is faster?
         
         count_storage_D = 0
@@ -199,7 +172,7 @@ class RtmWaveSolver:
 
         sys.stdout.write("\n")
         U_0.flush()
-        return D, U_0, D_fine
+        return D, D_fine
 
 
     def __print_benchmark_progress(self, progress, max, progress_bar_length=40):
@@ -223,7 +196,7 @@ def main():
     sim_setup = SimulationSetup(N_t=N_t)
     solver = RtmWaveSolver(sim_setup, use_gpu)
     # solver.calculate_U0()
-    solver.calculate_U_and_D("fracture/images/circle.npy")
+    solver.calculate_U0_D0()
     
     # test = solver.import_sources()
     # print(test.shape)
