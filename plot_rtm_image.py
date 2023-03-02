@@ -7,8 +7,10 @@ plt.rcParams["font.family"] = "aakar"
 
 def plot_rtm_image(rtm_path, fracture_path, image_height:int=512, image_width:int=512):
     image = np.load(rtm_path)
+    I_0 = np.load("rtm_data/I_0.npy")
+    image = image - I_0
     image = image.reshape(image_height, image_width)
-    clipping_max = np.max(np.abs(image)) *0.1
+    clipping_max = np.max(np.abs(image))
 
     if fracture_path:
         fracture = np.load(fracture_path)
