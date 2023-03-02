@@ -13,6 +13,8 @@ from dataclasses import dataclass
 class ExecutionSetup:
     gpu: bool = False
     precision: str = 'float64'
+    precision_np = numpy.float64
+    precision_cp = cupy.float64
 
 
 class CPU_GPU_Abstractor:
@@ -26,8 +28,12 @@ class CPU_GPU_Abstractor:
     def __setup_precision(self):
         if self.exec_setup.precision == 'float32':
             self.exec_setup.precision = self.xp.float32
+            self.exec_setup.precision_np = numpy.float32
+            self.exec_setup.precision_cp = cupy.float32
         elif self.exec_setup.precision == 'float64':
             self.exec_setup.precision = self.xp.float64
+            self.exec_setup.precision_np = numpy.float64
+            self.exec_setup.precision_cp = cupy.float64
         else:
             raise Exception("Invalid floating point precision specified")
 
