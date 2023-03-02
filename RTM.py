@@ -26,8 +26,6 @@ class RTM(CPU_GPU_Abstractor):
         self.nts = 20
         self.delta_t = setup.tau/self.nts
 
-        self.data_folder = f".{path.sep}rtm_data{path.sep}"    
-
     def generate_sources(self):
         source_locations = numpy.array([15,  25,  35,  44,  54,  64,  74,  84,  93, 103, 113, 123, 133,
                     142, 152, 162, 172, 182, 191, 201, 211, 221, 231, 240, 250, 260,
@@ -57,7 +55,7 @@ class RTM(CPU_GPU_Abstractor):
 
     @timeit
     def calculate_U_RT(self, D_file_name="D_fine.npy", U_RT_file_name="U_RT.npy"):
-        D = self.xp.load(self.data_folder + D_file_name)
+        D = self.xp.load(self.exec_setup.data_folder + D_file_name)
 
         # Reverse the time 
         D = self.xp.flip(D, 0)
@@ -65,7 +63,7 @@ class RTM(CPU_GPU_Abstractor):
         Nt = D.shape[0]
 
         u = self.xp.zeros([3,512*512,self.setup.N_s], dtype=self.exec_setup.precision)
-        U = numpy.memmap(self.data_folder + U_RT_file_name, self.exec_setup.precision, 'w+', shape=(int(Nt/self.nts),self.setup.N*self.setup.N, self.setup.N_s))
+        U = numpy.memmap(self.exec_setup.data_folder + U_RT_file_name, self.exec_setup.precision, 'w+', shape=(int(Nt/self.nts),self.setup.N*self.setup.N, self.setup.N_s))
 
         B_delta = self.generate_sources()
         A = self.get_A()
@@ -86,16 +84,13 @@ class RTM(CPU_GPU_Abstractor):
         
 
 def main():
-    N_t = 70
     use_gpu = False
 
     for i, arg in enumerate(sys.argv):
-        if arg == '-Nt':
-            N_t = int(sys.argv[i+1])
-        elif arg == '-gpu':
+        if arg == '-gpu':
             use_gpu = True
 
-    sim_setup = SimulationSetup(N_t=N_t)
+    sim_setup = SimulationSetup()
     exec_setup = ExecutionSetup(gpu=use_gpu, precision='float64')
     solver = RTM(sim_setup, exec_setup)
     solver.calculate_U_RT()

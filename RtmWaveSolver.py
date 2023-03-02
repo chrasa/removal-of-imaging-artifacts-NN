@@ -27,8 +27,6 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
         self.background_velocity = self.xp.full(self.setup.N**2, setup.background_velocity_value, dtype=self.exec_setup.precision)
         self.delta_t = setup.tau/20
 
-        self.data_folder = f".{path.sep}rtm_data{path.sep}"
-
     def import_sources(self):
         
         b = self.xp.loadtxt(self.setup.Bsrc_file, delimiter =',', dtype=self.exec_setup.precision)
@@ -86,8 +84,8 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
         u_init, A, D_init, b = self.init_simulation(c)
         D, D_fine = self.__calculate_U_D(u_init, A, D_init, b)
 
-        self.xp.save(self.data_folder + "D.npy", D)
-        self.xp.save(self.data_folder + "D_fine.npy", D_fine)
+        self.xp.save(self.exec_setup.data_folder + "D.npy", D)
+        self.xp.save(self.exec_setup.data_folder + "D_fine.npy", D_fine)
     
     @timeit
     def calculate_U0_D0(self, file_name="U_0.npy"):
@@ -96,8 +94,8 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
         u_init, A, D_init, b = self.init_simulation(self.background_velocity)
         D_0, D_0_fine = self.__calculate_U_D(u_init, A, D_init, b, file_name)
 
-        self.xp.save(self.data_folder + "D_0.npy", D_0)
-        self.xp.save(self.data_folder + "D_0_fine.npy", D_0_fine)
+        self.xp.save(self.exec_setup.data_folder + "D_0.npy", D_0)
+        self.xp.save(self.exec_setup.data_folder + "D_0_fine.npy", D_0_fine)
 
 
     def __calculate_U_D(self, u, A, D, b, U_file_name="U.npy"):
@@ -106,7 +104,7 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
         T = (self.setup.N_t * 2 - 1) * self.delta_t * nts
         time = self.xp.linspace(0, T, num=2*self.setup.N_t*nts)
 
-        U_0 = numpy.memmap(self.data_folder+U_file_name, self.exec_setup.precision_np, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s))
+        U_0 = numpy.memmap(self.exec_setup.data_folder+U_file_name, self.exec_setup.precision_np, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s))
         U_0[0,:,:] = cupy.asnumpy(u[PRESENT])      # Check if using a (sparse) projection matrix is faster?
         
         for i in range(1,len(time)):
@@ -132,16 +130,13 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
 
 
 def main():
-    N_t = 70
     use_gpu = False
 
     for i, arg in enumerate(sys.argv):
-        if arg == '-Nt':
-            N_t = int(sys.argv[i+1])
-        elif arg == '-gpu':
+        if arg == '-gpu':
             use_gpu = True
 
-    sim_setup = SimulationSetup(N_t=N_t)
+    sim_setup = SimulationSetup()
     exec_setup = ExecutionSetup(gpu=use_gpu)
     solver = RtmWaveSolver(sim_setup, exec_setup)
     # solver.calculate_U0_D0()
