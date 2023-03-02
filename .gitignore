@@ -132,3 +132,5 @@ bs_test
 wave_frames
 *.npy
 fracture/images
+testing/
+rtm_debug_frames/
