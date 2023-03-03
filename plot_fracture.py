@@ -14,6 +14,8 @@ def plot_fracture(fracture_path, frac_setup: FractureSetup):
     ax.imshow(np.squeeze(image))
     rect = patches.Rectangle((frac_setup.O_x, frac_setup.O_y), frac_setup.fractured_region_width, frac_setup.fractured_region_height, linewidth=1, edgecolor='r', facecolor='none')
     ax.add_patch(rect)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
     plt.show()
 
 if __name__ == "__main__":
