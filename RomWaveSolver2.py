@@ -38,16 +38,16 @@ class BackgroundSnapshotsSolver(CPU_GPU_Abstractor):
         self.data_folder = "." + sep + "rom_data" + sep
         
         # Calculate or load the orthogonal background snapshots V0
-        if exists(self.data_folder + "V_0.np."):
-            self.V_0 = self.xp.load(self.data_folder + "V_0.np.")
+        if exists(self.data_folder + "V_0.npy"):
+            self.V_0 = self.xp.load(self.data_folder + "V_0.npy")
         else:
             self.V_0 = self.calculate_V0()
             self.xp.save(self.data_folder + "V_0.npy", self.V_0)
         
-        if not exists(self.data_folder + "I_0.np."):
-            R = np.load(self.data_folder + "R_0.npy")
+        if not exists(self.data_folder + "I_0.npy"):
+            R = self.xp.load(self.data_folder + "R_0.npy")
             I_0 = self.calculate_imaging_func(R)
-            np.save(self.data_folder + "I_0.npy", I_0)
+            self.xp.save(self.data_folder + "I_0.npy", I_0)
 
     def import_sources(self):
         
@@ -100,13 +100,17 @@ class BackgroundSnapshotsSolver(CPU_GPU_Abstractor):
     @timeit
     def calculate_V0(self):
         """Calculate the orthogonal background snapshots V_0"""
-        u_init, A, D_init, b = self.init_simulation(self.background_velocity)
-        D_0, U_0 = self.calculate_U_D(u_init, A, D_init, b)
-        M_0 = self.calculate_mass_matrix(D_0)
-        V_0 = U_0 @ np.linalg.inv(M_0)
+        # u_init, A, D_init, b = self.init_simulation(self.background_velocity)
+        # D_0, U_0 = self.calculate_U_D(u_init, A, D_init, b)
+        U_0 = self.xp.load(self.data_folder + "U_0.npy")
+        D_0 = self.xp.load(self.data_folder + "D_0.npy")
+        print("calc mass matrix")
+        R = self.calculate_mass_matrix(D_0)
+        self.xp.save(self.data_folder + "R_0.npy", R)
+        print("calc inverse")
 
-        if not exists(self.data_folder + "M_0.np."):
-            np.save(self.data_folder + "M_0.npy", M_0)
+        U_0 = np.reshape(U_0, (self.N_x_im * self.N_y_im, self.N_s * self.N_t))
+        V_0 = U_0 @ self.xp.linalg.inv(R)
 
         return V_0
 
@@ -128,8 +132,8 @@ class BackgroundSnapshotsSolver(CPU_GPU_Abstractor):
         time = self.xp.linspace(0, T, num=2*self.N_t*nts)
 
         # U_0 = self.xp.zeros((self.N_x_im*self.N_y_im, self.N_s, self.N_t))   # Can Fortran ordering be used already here?
-        U_0 = np.memmap(self.data_folder+"U_0.npy", np.float32, 'w+', shape=(self.N_x_im*self.N_y_im, self.N_s, self.N_t))
-        U_0[:,:,0] = cp.asnumpy(u[1][self.imaging_region_indices])      # Check if using a (sparse) projection matrix is faster?
+        U_0_temp = np.memmap(self.data_folder+"U_0_temp.npy", np.float32, 'w+', shape=(self.N_x_im*self.N_y_im, self.N_s, self.N_t))
+        U_0_temp[:,:,0] = cp.asnumpy(u[1][self.imaging_region_indices])      # Check if using a (sparse) projection matrix is faster?
         
         for i in range(1,len(time)):
             self._print_progress_bar(i+1, len(time), title="Calculate U and D")
@@ -142,12 +146,13 @@ class BackgroundSnapshotsSolver(CPU_GPU_Abstractor):
                 D[index] = np.transpose(b) @ u[1]
                 D[index] = 0.5*(D[index].T + D[index])
 
-        #         if i <= self.N_t*nts-1:
-        #             U_0[:,:,index] = cp.asnumpy(u[1][self.imaging_region_indices])
+                if i <= self.N_t*nts-1:
+                    U_0_temp[:,:,index] = cp.asnumpy(u[1][self.imaging_region_indices])
 
-        # U_0 = np.array(U_0) # Load array completely into CPU memory
-        # U_0 = np.reshape(U_0, (self.N_x_im * self.N_y_im, self.N_s * self.N_t))
-        # np.save(self.data_folder + "U_0.npy", U_0)
+        U_0_temp.flush()
+        U_0 = np.array(U_0_temp) # Load array completely into CPU memory
+        U_0 = np.reshape(U_0, (self.N_x_im * self.N_y_im, self.N_s * self.N_t))
+        np.save(self.data_folder + "U_0.npy", U_0)
 
         self.xp.save(self.data_folder + "D_0.npy", D)
 
@@ -156,7 +161,7 @@ class BackgroundSnapshotsSolver(CPU_GPU_Abstractor):
     @timeit
     def calculate_mass_matrix(self, D):
         """Calculate the Grammian matrix, also revered to as "Mass Matrix" using Block-Cholesky factorization"""
-        M = np.zeros((self.N_s*self.N_t, self.N_s*self.N_t), dtype=np.float64)
+        M = self.xp.zeros((self.N_s*self.N_t, self.N_s*self.N_t), dtype=np.float64)
 
         for i in range(self.N_t):
             for j in range(self.N_t):
@@ -165,14 +170,20 @@ class BackgroundSnapshotsSolver(CPU_GPU_Abstractor):
 
                 M[ind_i[0]:ind_i[-1],ind_j[0]:ind_j[-1]] = 0.5 * (D[abs(i-j)] + D[abs(i+j)])
 
-        R = mblockchol(M, self.N_s, self.N_t)
+        R = mblockchol(cp.asnumpy(M), self.N_s, self.N_t)
 
-        return R
+        if self.exec_setup.gpu:
+            return cp.asarray(R)
+        else:
+            return R
     
     @timeit
     def calculate_imaging_func(self, R):
+        print("V_0 @ R")
         I = self.V_0 @ R
-        I = np.square(I)
+
+        print("square(I)")
+        I = self.xp.square(I)
 
         I = I.sum(axis=1)
         
@@ -182,7 +193,7 @@ class BackgroundSnapshotsSolver(CPU_GPU_Abstractor):
 
 def main():
     sim_setup = SimulationSetup()
-    exec_setup = ExecutionSetup(gpu=True)
+    exec_setup = ExecutionSetup(gpu=False)
 
     solver = BackgroundSnapshotsSolver(sim_setup, exec_setup)
 
