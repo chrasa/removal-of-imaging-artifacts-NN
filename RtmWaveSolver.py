@@ -79,6 +79,9 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
     def calculate_U_D(self, path_to_c):
         """Calculate wave fields in the medium and the data at the receivers for a given fracture"""
         c = self.xp.load(path_to_c)
+        c = self.xp.reshape(c, (self.setup.N_x, self.setup.N_y))
+        c = self.xp.transpose(c)
+        c = self.xp.reshape(c, self.setup.N_x*self.setup.N_y)
         c = self.xp.squeeze(c)
 
         u_init, A, D_init, b = self.init_simulation(c)
@@ -104,8 +107,8 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
         T = (self.setup.N_t * 2 - 1) * self.delta_t * nts
         time = self.xp.linspace(0, T, num=2*self.setup.N_t*nts)
 
-        U_0 = numpy.memmap(self.exec_setup.data_folder+U_file_name, self.exec_setup.precision_np, 'w+', shape=(2*self.setup.N_t,self.setup.N*self.setup.N, self.setup.N_s))
-        U_0[0,:,:] = cupy.asnumpy(u[PRESENT])      # Check if using a (sparse) projection matrix is faster?
+        U_0 = numpy.memmap(self.exec_setup.data_folder+U_file_name, self.exec_setup.precision_np, 'w+', shape=(self.setup.N_t, self.setup.N_y_im*self.setup.N_x_im, self.setup.N_s))
+        U_0[0,:,:] = cupy.asnumpy(u[PRESENT][self.imaging_region_indices])      # Check if using a (sparse) projection matrix is faster?
         
         for i in range(1,len(time)):
             self._print_progress_bar(i+1, len(time), title="Wave solver progress")
@@ -120,8 +123,9 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
                 index = int(i/nts)
                 D[index] = self.xp.transpose(b) @ u[PRESENT]
                 D[index] = 0.5*(D[index].T + D[index])
-
-                U_0[index,:,:] = cupy.asnumpy(u[PRESENT])
+                
+                if i <= self.setup.N_t*nts-1:
+                    U_0[index,:,:] = cupy.asnumpy(u[PRESENT][self.imaging_region_indices])
 
         sys.stdout.write("\n")
         U_0.flush()
@@ -137,7 +141,9 @@ def main():
             use_gpu = True
 
     sim_setup = SimulationSetup()
-    exec_setup = ExecutionSetup(gpu=use_gpu)
+    exec_setup = ExecutionSetup(
+        gpu=use_gpu,
+        precision='float32')
     solver = RtmWaveSolver(sim_setup, exec_setup)
     # solver.calculate_U0_D0()
     solver.calculate_U_D("fracture/images/circle.npy")

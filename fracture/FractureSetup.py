@@ -6,7 +6,7 @@ class FractureSetup:
     image_height: int = 512
     fractured_region_width: int = 350
     fractured_region_height: int = 175
-    O_x: int = 100
+    O_x: int = 25
     O_y: int = 81
     n_fractures: int = 4
     fracture_width: int = 4

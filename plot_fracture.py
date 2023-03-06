@@ -7,12 +7,13 @@ from fracture.FractureSetup import FractureSetup
 
 def plot_fracture(fracture_path, frac_setup: FractureSetup):
     image = np.load(fracture_path)
-    image = image.reshape(frac_setup.image_height, frac_setup.image_width, 1)
+    print(image.shape)
+    image = image.reshape(frac_setup.image_height, frac_setup.image_width)
     
     fig, ax = plt.subplots()
     ax.set_title(f"{fracture_path}")
-    ax.imshow(np.squeeze(image))
-    rect = patches.Rectangle((frac_setup.O_x, frac_setup.O_y), frac_setup.fractured_region_width, frac_setup.fractured_region_height, linewidth=1, edgecolor='r', facecolor='none')
+    ax.imshow(image.T)
+    rect = patches.Rectangle((frac_setup.O_x, frac_setup.O_y), frac_setup.fractured_region_height, frac_setup.fractured_region_width, linewidth=1, edgecolor='r', facecolor='none')
     ax.add_patch(rect)
     ax.set_xlabel('x')
     ax.set_ylabel('y')
