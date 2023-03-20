@@ -7,15 +7,10 @@ from SimulationSetup import SimulationSetup
 # Convert frames to images with: ffmpeg -framerate 12 -pattern_type glob -i '*.jpg'   -c:v libx264 -pix_fmt yuv420p out.mp4
 
 def plot_wave(setup: SimulationSetup, source, file_path):
-    # U_0 = np.load(file_path)
-    # print(f"Shape of U_0: {U_0.shape}")
+    U_0 = np.memmap(file_path, np.float32, 'r', shape=(2*setup.N_t, setup.N_y_im*setup.N_x_im, setup.N_s))
+    U_0 = np.reshape(U_0, (2*setup.N_t, setup.N_y_im, setup.N_x_im, setup.N_s))
 
-
-    U_0 = np.memmap(file_path, np.float32, 'r', shape=(setup.N_t, setup.N_y_im*setup.N_x_im, setup.N_s))
-
-    U_0 = np.reshape(U_0, (setup.N_t, setup.N_y_im, setup.N_x_im, setup.N_s))
-
-    for timestep in range(setup.N_t):
+    for timestep in range(2*setup.N_t):
         slice = U_0[timestep,:,:,source]
         plt.imshow(slice)
         plt.colorbar(orientation="horizontal")
