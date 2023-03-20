@@ -107,7 +107,7 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
         T = (self.setup.N_t * 2 - 1) * self.delta_t * nts
         time = self.xp.linspace(0, T, num=2*self.setup.N_t*nts)
 
-        U_0 = numpy.memmap(self.exec_setup.data_folder+U_file_name, self.exec_setup.precision_np, 'w+', shape=(self.setup.N_t, self.setup.N_y_im*self.setup.N_x_im, self.setup.N_s))
+        U_0 = numpy.memmap(self.exec_setup.data_folder+U_file_name, self.exec_setup.precision_np, 'w+', shape=(2*self.setup.N_t, self.setup.N_y_im*self.setup.N_x_im, self.setup.N_s))
         U_0[0,:,:] = cupy.asnumpy(u[PRESENT][self.imaging_region_indices])      # Check if using a (sparse) projection matrix is faster?
         
         for i in range(1,len(time)):
@@ -124,10 +124,9 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
                 D[index] = self.xp.transpose(b) @ u[PRESENT]
                 D[index] = 0.5*(D[index].T + D[index])
                 
-                if i <= self.setup.N_t*nts-1:
-                    U_0[index,:,:] = cupy.asnumpy(u[PRESENT][self.imaging_region_indices])
+                U_0[index,:,:] = cupy.asnumpy(u[PRESENT][self.imaging_region_indices])
 
-        sys.stdout.write("\n")
+        self._end_progress_bar()
         U_0.flush()
 
         return D, D_fine
@@ -140,7 +139,7 @@ def main():
         if arg == '-gpu':
             use_gpu = True
 
-    sim_setup = SimulationSetup()
+    sim_setup = SimulationSetup(N_t=35)
     exec_setup = ExecutionSetup(
         gpu=use_gpu,
         precision='float32')

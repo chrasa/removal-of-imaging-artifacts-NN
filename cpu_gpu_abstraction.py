@@ -70,3 +70,7 @@ class CPU_GPU_Abstractor:
         number_of_progress_indicators = int(progress * progress_bar_length // (max))
 
         sys.stdout.write(title + "[" + number_of_progress_indicators*"#" + (progress_bar_length - number_of_progress_indicators)*"-" + "]" + success_rate + remaining_time)
+
+    def _end_progress_bar(self):
+        sys.stdout.write("\n")
+        self.__pb_started = False

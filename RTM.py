@@ -25,6 +25,7 @@ class RTM(CPU_GPU_Abstractor):
         self.background_velocity = self.xp.full(self.setup.N**2, setup.background_velocity_value, dtype=self.exec_setup.precision)
         self.nts = 20
         self.delta_t = setup.tau/self.nts
+        self.imaging_region_indices = self.get_imaging_region_indices()
 
     def generate_sources(self):
         source_locations = numpy.array([15,  25,  35,  44,  54,  64,  74,  84,  93, 103, 113, 123, 133,
@@ -36,7 +37,21 @@ class RTM(CPU_GPU_Abstractor):
         for idx in range(len(source_locations)):
             B_delta[:,idx] = scipy.signal.unit_impulse(512*512, source_locations[idx])
         
-        return cupy.asarray(B_delta)
+        B_delta = numpy.reshape(B_delta, (512,512,50))
+        B_delta = numpy.transpose(B_delta, (1,0,2))
+        B_delta = numpy.reshape(B_delta, (512*512,50))
+
+        if self.exec_setup.gpu:
+            return cupy.asarray(B_delta)
+        else:
+            return B_delta
+    
+    def get_imaging_region_indices(self):
+        im_y_indices = range(self.setup.O_y, self.setup.O_y+self.setup.N_y_im)
+        im_x_indices = range(self.setup.O_x, self.setup.O_x+self.setup.N_x_im)
+        indices = [y*self.setup.N_x + x for y in im_y_indices for x in im_x_indices] 
+
+        return indices
 
     @timeit 
     def get_A(self):
@@ -60,27 +75,52 @@ class RTM(CPU_GPU_Abstractor):
         # Reverse the time 
         D = self.xp.flip(D, 0)
 
-        Nt = D.shape[0]
-
         u = self.xp.zeros([3,512*512,self.setup.N_s], dtype=self.exec_setup.precision)
-        U = numpy.memmap(self.exec_setup.data_folder + U_RT_file_name, self.exec_setup.precision, 'w+', shape=(int(Nt/self.nts),self.setup.N*self.setup.N, self.setup.N_s))
+        U = numpy.memmap(self.exec_setup.data_folder + U_RT_file_name, self.exec_setup.precision, 'w+', shape=(2*self.setup.N_t,self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s))
 
         B_delta = self.generate_sources()
         A = self.get_A()
 
         factor = 2*self.scipy.sparse.identity(self.setup.N**2) - self.delta_t**2 * A
 
-        for time_idx in range(Nt):
-            self._print_progress_bar(time_idx+1, Nt)
+        for time_idx in range(2*self.setup.N_t * self.nts):
+            self._print_progress_bar(time_idx+1, 2*self.setup.N_t*self.nts)
             u[PAST,:,:] = u[PRESENT,:,:]
             u[PRESENT,:,:] = u[FUTURE,:,:]
             u[FUTURE,:,:] = factor@u[PRESENT,:,:] - u[PAST,:,:] + self.delta_t**2 *  B_delta @ D[time_idx,:,:]
 
             if (time_idx % self.nts) == 0:
-                U[int(time_idx/self.nts),:,:] = cupy.asnumpy(u[FUTURE,:,:])
+                U[int(time_idx/self.nts),:,:] = cupy.asnumpy(u[FUTURE,:,:][self.imaging_region_indices])
 
-        sys.stdout.write("\n")
+        self._end_progress_bar()
         U.flush()
+
+    @timeit
+    def calculate_I(self, U_RT_file_name="U_RT.npy", U_0_file_name="U_0.npy", I_file_name="I.npy"):
+        U_RT = numpy.memmap(self.exec_setup.data_folder + U_RT_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s))
+        U_0 = numpy.memmap(self.exec_setup.data_folder + U_0_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s))
+
+        I = self.xp.zeros((self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s), dtype=self.exec_setup.precision)
+
+        for tidx in range(2*self.setup.N_t):
+            self._print_progress_bar(tidx+1, 2*self.setup.N_t, title="Integral progress")
+            t_idx_backward = 2*self.setup.N_t -tidx -1
+            t_idx_forward = tidx
+
+            U_RT_temp = self.xp.array(U_RT[t_idx_forward,:,:])
+            U_0_temp = self.xp.array(U_0[t_idx_backward,:,:])
+
+            for s_idx in range(self.setup.N_s):
+                temp = U_RT_temp[:,s_idx]
+                # temp = temp.reshape(512,512)
+                # temp = temp.T
+                # temp = temp.reshape(512*512)
+
+                I[:,s_idx] += temp * U_0_temp[:,s_idx] * self.setup.tau
+        self._end_progress_bar()
+
+        I = self.xp.sum(I, axis=1)
+        self.xp.save(self.exec_setup.data_folder + I_file_name, I)
         
 
 def main():
@@ -90,10 +130,13 @@ def main():
         if arg == '-gpu':
             use_gpu = True
 
-    sim_setup = SimulationSetup()
-    exec_setup = ExecutionSetup(gpu=use_gpu, precision='float64')
+    sim_setup = SimulationSetup(N_t=35)
+    exec_setup = ExecutionSetup(gpu=use_gpu, precision='float32')
     solver = RTM(sim_setup, exec_setup)
-    solver.calculate_U_RT()
+    # solver.calculate_U_RT(D_file_name="D_0_fine.npy", U_RT_file_name="U_0_RT.npy")
+    # solver.calculate_U_RT(D_file_name="D_fine.npy", U_RT_file_name="U_RT.npy")
+    solver.calculate_I(U_RT_file_name="U_0_RT.npy", I_file_name="I_0.npy")
+    solver.calculate_I(U_RT_file_name="U_RT.npy", I_file_name="I.npy")
 
 
 if __name__ == "__main__":
