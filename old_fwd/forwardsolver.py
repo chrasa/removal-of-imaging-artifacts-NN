@@ -136,15 +136,16 @@ class ForwardSolver:
                 D[index] = 0.5*(D[index].T + D[index])
 
                 count_storage_D += 1
-                print(count_storage_D)
+                print(f"{count_storage_D}/{len(time)/nts}")
 
                 if i <= self.N_t*nts-1:
                     U_0[:,:,index] = u[1][self.imaging_region_indices]
 
                     count_storage_U_0 += 1
 
-
+        print("reshape U_0")
         U_0 = np.reshape(U_0, (self.N_x_im * self.N_y_im, self.N_s * self.N_t),order='F')
+        np.save("./U_0.npy", U_0)
 
         print(f"Count D = {count_storage_D}")
         print(f"Count stage U_0 = {count_storage_U_0}")
@@ -222,7 +223,7 @@ class ForwardSolver:
         self.plot_result_matrix(data_temp, plot_title, np.shape(data_temp)[1], np.shape(data_temp)[0])
 
     def calculate_I_matrices(self, n_images: int, plot: bool, output_file: str = ""):
-        c = np.load(f"./fractures/im1.npy")
+        c = np.load(f"./fractures/circle.npy")
         I = self.calculate_intensity(c)
         np.save("./I.npy", I)
         # I = np.load("./I.npy")
@@ -297,7 +298,14 @@ def main():
     # V0 = np.load("./V0.npy")
     #solver.plot_intensity(I)
 
-    solver.plot_samples_of_V0()
+    # solver.plot_samples_of_V0()
+
+    # I = np.load("./I.npy")
+    # I = np.squeeze(I)
+    # I_0 = np.load("./I_0.npy")
+
+    # I = I - I_0
+    # solver.plot_intensity(I, "Test")
 
 if __name__ == "__main__":
     main()
