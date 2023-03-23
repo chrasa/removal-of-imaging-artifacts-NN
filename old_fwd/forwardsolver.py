@@ -153,25 +153,30 @@ class ForwardSolver:
         return D, U_0
 
     def calculate_d(self, u, A, D, b):
-        nts = 20
-        T = (self.N_t * 2 - 1) * self.delta_t * nts
-        time = np.linspace(0, T, num=2*self.N_t*nts)
+        # nts = 20
+        # T = (self.N_t * 2 - 1) * self.delta_t * nts
+        # time = np.linspace(0, T, num=2*self.N_t*nts)
         
-        count_storage_D = 0
-        for i in range(1,len(time)):
-            u[2] = u[1] 
-            u[1] = u[0] 
-            u[0] = (-self.delta_t**2 * A) @ u[1] - u[2] + 2*u[1]
+        # count_storage_D = 0
+        # for i in range(1,len(time)):
+        #     u[2] = u[1] 
+        #     u[1] = u[0] 
+        #     u[0] = (-self.delta_t**2 * A) @ u[1] - u[2] + 2*u[1]
 
-            if (i % nts) == 0:
-                index = int(i/nts)
-                D[index] = np.transpose(b) @ u[1]
-                D[index] = 0.5*(D[index].T + D[index])
+        #     if (i % nts) == 0:
+        #         index = int(i/nts)
+        #         D[index] = np.transpose(b) @ u[1]
+        #         D[index] = 0.5*(D[index].T + D[index])
 
-                count_storage_D += 1
-                print(count_storage_D)
+        #         count_storage_D += 1
+        #         print(count_storage_D)
 
-        print(f"Count D = {count_storage_D}")
+        # print(f"Count D = {count_storage_D}")
+
+        # np.save("./D.npy", D)
+
+        D = np.load("../rtm_data/D.npy")
+        print(D.shape)
         return D
 
     def calculate_intensity(self, C: np.array):
@@ -283,13 +288,13 @@ def main():
                 N_s = 50,
                 delta_x = 0.0063,
                 tau = 3.0303*10**(-5),
-                N_t = 35,
+                N_t = 65,
                 background_velocity_value = 1000,
                 Bsrc_file = "Bsrc_T.txt",
-                N_x_im = 175,
-                N_y_im = 350,
+                N_x_im = 140,
+                N_y_im = 155,
                 O_x = 25,
-                O_y = 81
+                O_y = 180
     )
 
     solver.calculate_I_matrices(10, True, False)
