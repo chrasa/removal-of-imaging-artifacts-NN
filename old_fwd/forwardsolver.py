@@ -116,40 +116,52 @@ class ForwardSolver:
     def calculate_u_d(self, u, A, D, b):
         # Make different function for D calculate_u_d
         # Discretize time
-        nts = 20
-        T = (self.N_t * 2 - 1) * self.delta_t * nts
-        time = np.linspace(0, T, num=2*self.N_t*nts)
+        # nts = 20
+        # T = (self.N_t * 2 - 1) * self.delta_t * nts
+        # time = np.linspace(0, T, num=2*self.N_t*nts)
 
-        U_0 = np.zeros((self.N_x_im*self.N_y_im, self.N_s, self.N_t))
-        U_0[:,:,0] = u[1][self.imaging_region_indices]
+        # U_0 = np.zeros((self.N_x_im*self.N_y_im, self.N_s, self.N_t))
+        # U_0[:,:,0] = u[1][self.imaging_region_indices]
         
-        count_storage_D = 0
-        count_storage_U_0 = 0
-        for i in range(1,len(time)):
-            u[2] = u[1] 
-            u[1] = u[0] 
-            u[0] = (-self.delta_t**2 * A) @ u[1] - u[2] + 2*u[1]
+        # count_storage_D = 0
+        # count_storage_U_0 = 0
+        # for i in range(1,len(time)):
+        #     u[2] = u[1] 
+        #     u[1] = u[0] 
+        #     u[0] = (-self.delta_t**2 * A) @ u[1] - u[2] + 2*u[1]
 
-            if (i % nts) == 0:
-                index = int(i/nts)
-                D[index] = np.transpose(b) @ u[1]
-                D[index] = 0.5*(D[index].T + D[index])
+        #     if (i % nts) == 0:
+        #         index = int(i/nts)
+        #         D[index] = np.transpose(b) @ u[1]
+        #         D[index] = 0.5*(D[index].T + D[index])
 
-                count_storage_D += 1
-                print(f"{count_storage_D}/{len(time)/nts}")
+        #         count_storage_D += 1
+        #         print(f"{count_storage_D}/{len(time)/nts}")
 
-                if i <= self.N_t*nts-1:
-                    U_0[:,:,index] = u[1][self.imaging_region_indices]
+        #         if i <= self.N_t*nts-1:
+        #             U_0[:,:,index] = u[1][self.imaging_region_indices]
 
-                    count_storage_U_0 += 1
+        #             count_storage_U_0 += 1
 
-        print("reshape U_0")
-        U_0 = np.reshape(U_0, (self.N_x_im * self.N_y_im, self.N_s * self.N_t),order='F')
-        np.save("./U_0.npy", U_0)
+        # print("reshape U_0")
+        # U_0 = np.reshape(U_0, (self.N_x_im * self.N_y_im, self.N_s * self.N_t),order='F')
+        # np.save("./U_0.npy", U_0)
 
-        print(f"Count D = {count_storage_D}")
-        print(f"Count stage U_0 = {count_storage_U_0}")
+        # print(f"Count D = {count_storage_D}")
+        # print(f"Count stage U_0 = {count_storage_U_0}")
 
+        D = np.load("../rtm_data/D_0.npy")
+        # U_0_mem = np.memmap("../rtm_data/U_0.npy", np.float64, 'r', shape=(2*self.N_t, self.N_y_im*self.N_x_im, self.N_s))
+
+        # U_0 = np.array(U_0_mem[0:self.N_t, :, :])
+        # U_0 = np.reshape(U_0, (self.N_x_im * self.N_y_im, self.N_s * self.N_t),order='F')
+
+        U_0_mem = np.memmap("../rtm_data/U_0.npy", np.float64, 'r', shape=(2*self.N_t, self.N_y_im*self.N_x_im, self.N_s))
+        U_0 = np.array(U_0_mem)
+        U_0 = U_0[0:self.N_t,:,:]
+        U_0 = np.moveaxis(U_0, 0, -1)
+        U_0 = np.reshape(U_0, (self.N_x_im * self.N_y_im, self.N_s*self.N_t), order='F')
+        
         return D, U_0
 
     def calculate_d(self, u, A, D, b):
