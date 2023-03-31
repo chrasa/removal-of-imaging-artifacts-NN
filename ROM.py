@@ -11,9 +11,9 @@ class ROM(CPU_GPU_Abstractor):
         super(ROM, self).__init__(exec_setup=exec_setup)
 
         self.setup = setup
-        self.V_0_path = f".{sep}{self.exec_setup.data_folder}{sep}V_0.npy"
-        self.I_0_path = f".{sep}{self.exec_setup.data_folder}{sep}I_0.npy"
-        self.R_0_path = f".{sep}{self.exec_setup.data_folder}{sep}R_0.npy"
+        self.V_0_path = self.exec_setup.data_folder + "V_0.npy"
+        self.I_0_path = self.exec_setup.data_folder + "I_0_ROM.npy"
+        self.R_0_path = self.exec_setup.data_folder + "R_0.npy"
 
         self.V_0 = self.get_V0()
         self.I_0 = self.get_I0()
@@ -108,7 +108,7 @@ class ROM(CPU_GPU_Abstractor):
         I = self._calculate_imaging_function(R)
         I = I - self.I_0
         I = self._get_image_derivative(I)
-        self.xp.save(f".{sep}{self.exec_setup.data_folder}{sep}I.npy", I)
+        self.xp.save(self.exec_setup.data_folder + "I_ROM.npy", I)
 
 
 def main():
