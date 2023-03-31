@@ -4,6 +4,7 @@ from cholesky import mblockchol
 from scipy import ndimage
 from os.path import exists
 from SimulationSetup import SimulationSetup
+from benchmark import timeit
 
 class ROM:
 
@@ -44,6 +45,7 @@ class ROM:
 
         return indices
         
+    @timeit
     def init_simulation(self, c: np.array):
         # Calculate operators
         I_k = sparse.identity(self.setup.N)
@@ -68,6 +70,7 @@ class ROM:
 
         return u, A, D, b 
 
+    @timeit
     def calculate_V0(self):
         u_init, A, D_init, b = self.init_simulation(self.background_velocity)
         D, U_0 = self.calculate_u_d(u_init, A, D_init, b) 
@@ -99,6 +102,7 @@ class ROM:
         D = np.load("./rtm_data/D.npy")
         return D
 
+    @timeit
     def calculate_intensity(self, C: np.array):
         u_init, A_init, D_init, b = self.init_simulation(C)
         D = self.calculate_d(u_init, A_init, D_init, b)
@@ -108,6 +112,7 @@ class ROM:
 
         return I
 
+    @timeit
     def calculate_mass_matrix(self, D):
         M = np.zeros((self.setup.N_s*self.setup.N_t, self.setup.N_s*self.setup.N_t), dtype=np.float64)
 
@@ -122,6 +127,7 @@ class ROM:
 
         return R
     
+    @timeit
     def calculate_imaging_func(self, R):
         I = self.V_0 @ R
         I = np.square(I)
