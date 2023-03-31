@@ -11,27 +11,47 @@ class ROM(CPU_GPU_Abstractor):
         super(ROM, self).__init__(exec_setup=exec_setup)
 
         self.setup = setup
+        self.V_0_path = "./rom_data/V_0.npy"
+        self.I_0_path = "./rom_data/I_0.npy"
+        self.R_0_path = "./rom_data/R_0.npy"
 
-        if exists("./rom_data/V_0.npy"):
-            self.V_0 = self.xp.load("./rom_data/V_0.npy")
-        
+        self.V_0 = self.get_V0()
+        self.I_0 = self.get_I0()
+
+    def get_V0(self):
+        if exists(self.V_0_path):
+            return self.xp.load(self.V_0_path)
         else:
-            self.V_0 = self.calculate_V0()
-            self.xp.save("./rom_data/V_0.npy", self.V_0)
+            V_0 = self.__calculate_V0()
+            self.xp.save(self.V_0_path, V_0)
+            return V_0
         
-        if not exists("./rom_data/I_0.npy"):
-            R = self.xp.load("./rom_data/R_0.npy")
-            I_0 = self.calculate_imaging_func(R)
-            self.xp.save("./rom_data/I_0.npy", I_0)
+    def get_I0(self):
+        if not exists(self.I_0_path):
+            I_0 = self.__calculate_I0()
+            self.xp.save(self.I_0_path, I_0)
+            return I_0
+        else:
+            return self.xp.load(self.I_0_path)
 
     @timeit
-    def calculate_V0(self):
+    def __calculate_I0(self):
+        if not exists(self.R_0_path):
+            D_0, _ = self.load_D0_and_U0() 
+            R_0 = self.calculate_mass_matrix(D_0)
+        else:
+            R_0 = self.xp.load(self.R_0_path)
+        I_0 = self.calculate_imaging_func(R_0)
+        return I_0
+    
+    @timeit
+    def __calculate_V0(self):
         D_0, U_0 = self.load_D0_and_U0() 
         R = self.calculate_mass_matrix(D_0)
         V_0 = U_0 @ self.xp.linalg.inv(R)
 
-        if not exists("./rom_data/R_0.npy"):
-            self.xp.save("./rom_data/R_0.npy", R)
+        if not exists(self.R_0_path):
+            self.xp.save(self.R_0_path, R)
 
         return V_0
 
@@ -93,9 +113,7 @@ class ROM(CPU_GPU_Abstractor):
     
     def calculate_I_matrices(self):
         I = self.calculate_intensity()
-        I_0 = self.xp.load("./rom_data/I_0.npy")
-
-        I = I - I_0
+        I = I - self.I_0
         I = self.get_image_derivative(I)
         self.xp.save("./rom_data/I.npy", I)
 
