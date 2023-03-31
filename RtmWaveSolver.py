@@ -79,9 +79,6 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
     def calculate_U_D(self, path_to_c):
         """Calculate wave fields in the medium and the data at the receivers for a given fracture"""
         c = self.xp.load(path_to_c)
-        c = self.xp.reshape(c, (self.setup.N_x, self.setup.N_y))
-        c = self.xp.transpose(c)
-        c = self.xp.reshape(c, self.setup.N_x*self.setup.N_y)
         c = self.xp.squeeze(c)
 
         u_init, A, D_init, b = self.init_simulation(c)
@@ -139,13 +136,17 @@ def main():
         if arg == '-gpu':
             use_gpu = True
 
-    sim_setup = SimulationSetup(N_t=35)
+    sim_setup = SimulationSetup(N_t=65,
+                                N_x_im=140,
+                                N_y_im=155,
+                                O_x=25,
+                                O_y=180)
     exec_setup = ExecutionSetup(
         gpu=use_gpu,
-        precision='float32')
+        precision='float64')
     solver = RtmWaveSolver(sim_setup, exec_setup)
-    # solver.calculate_U0_D0()
-    solver.calculate_U_D("fracture/images/circle.npy")
+    solver.calculate_U0_D0()
+    # solver.calculate_U_D("old_fwd/fractures/circle.npy")
 
 
 if __name__ == "__main__":
