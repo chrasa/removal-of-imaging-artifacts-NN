@@ -108,8 +108,7 @@ class ROM:
         D = self.calculate_d(u_init, A_init, D_init, b)
         R = self.calculate_mass_matrix(D)
         I = self.calculate_imaging_func(R)
-        I = self.get_image_derivative(I)
-
+        
         return I
 
     @timeit
