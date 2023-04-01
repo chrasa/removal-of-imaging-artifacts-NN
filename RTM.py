@@ -138,7 +138,7 @@ class RTM(CPU_GPU_Abstractor):
         if I_file_name:
             self.xp.save(self.exec_setup.data_folder + I_file_name, I)
         
-        return I
+        return cupy.asnumpy(I)
         
 
 def main():
