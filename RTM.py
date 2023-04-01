@@ -84,7 +84,7 @@ class RTM(CPU_GPU_Abstractor):
         return A
 
     @timeit
-    def calculate_U_RT(self, D_file_name="D_fine.npy", U_RT_file_name="U_RT.npy"):
+    def __calculate_U_RT(self, D_file_name="D_fine.npy", U_RT_file_name="U_RT.npy"):
         D = self.xp.load(self.exec_setup.data_folder + D_file_name)
 
         # Reverse the time 
@@ -110,7 +110,7 @@ class RTM(CPU_GPU_Abstractor):
         self._end_progress_bar()
         U.flush()
 
-    def __calculate_imaging_function(self, U_RT_file_name="U_RT.npy", U_0_file_name="U_0.npy", I_file_name=""):
+    def __calculate_imaging_function(self, U_RT_file_name="U_RT.npy", U_0_file_name="U_0.npy"):
         U_RT = numpy.memmap(self.exec_setup.data_folder + U_RT_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s))
         U_0 = numpy.memmap(self.exec_setup.data_folder + U_0_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s))
 
@@ -131,8 +131,9 @@ class RTM(CPU_GPU_Abstractor):
         return self.xp.sum(I, axis=1)
     
     @timeit
-    def calculate_I(self, U_RT_file_name="U_RT.npy", U_0_file_name="U_0.npy", I_file_name=""):
-        I = self.__calculate_imaging_function(U_RT_file_name, U_0_file_name, I_file_name)
+    def calculate_I(self, D_file_name="D_fine.npy", U_0_file_name="U_0.npy", I_file_name=""):
+        self.__calculate_U_RT(D_file_name=D_file_name, U_RT_file_name="U_RT.npy")
+        I = self.__calculate_imaging_function(U_RT_file_name="U_RT.npy", U_0_file_name=U_0_file_name)
         I = I - self.I_0
         if I_file_name:
             self.xp.save(self.exec_setup.data_folder + I_file_name, I)
@@ -150,8 +151,7 @@ def main():
     sim_setup = SimulationSetup(N_t=35)
     exec_setup = ExecutionSetup(gpu=use_gpu, precision='float32')
     solver = RTM(sim_setup, exec_setup)
-    solver.calculate_U_RT(D_file_name="D_fine.npy", U_RT_file_name="U_RT.npy")
-    solver.calculate_I(U_RT_file_name="U_RT.npy", I_file_name="I.npy")
+    solver.calculate_I(D_file_name="U_RT.npy", I_file_name="I.npy")
 
 
 if __name__ == "__main__":
