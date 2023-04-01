@@ -61,10 +61,10 @@ class ROM(CPU_GPU_Abstractor):
         ind_list = [int(x) for x in ind_t]
         return ind_list
 
-    def _load_D0_and_U0(self, D_0_path=f".{sep}rtm_data{sep}D_0.npy", U_0_path=f".{sep}rtm_data{sep}U_0.npy"):
-        D = self.xp.load(D_0_path)
+    def _load_D0_and_U0(self, D_0_path="D_0.npy", U_0_path="U_0.npy"):
+        D = self.xp.load(self.exec_setup.data_folder + D_0_path)
 
-        U_0_mem = self.xp.memmap(U_0_path, self.exec_setup.precision, 'r', shape=(2*self.setup.N_t, self.setup.N_y_im*self.setup.N_x_im, self.setup.N_s))
+        U_0_mem = self.xp.memmap(self.exec_setup.data_folder + U_0_path, self.exec_setup.precision, 'r', shape=(2*self.setup.N_t, self.setup.N_y_im*self.setup.N_x_im, self.setup.N_s))
         U_0 = self.xp.array(U_0_mem)
         U_0 = U_0[0:self.setup.N_t,:,:]
         U_0 = self.xp.moveaxis(U_0, 0, -1)
@@ -111,7 +111,7 @@ class ROM(CPU_GPU_Abstractor):
         I = self._get_image_derivative(I)
         if I_file_name:
             self.xp.save(self.exec_setup.data_folder + "I_ROM.npy", I)
-        return cupy.asnumpy(I)
+        return cupy.asnumpy(self.xp.squeeze(I))
 
 
 def main():
