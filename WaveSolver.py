@@ -76,9 +76,9 @@ class WaveSolver(CPU_GPU_Abstractor):
         return u, A, D, b 
 
     @timeit
-    def calculate_U_D(self, path_to_c):
+    def calculate_U_D(self, c):
         """Calculate wave fields in the medium and the data at the receivers for a given fracture"""
-        c = self.xp.load(path_to_c)
+        c = self._get_array_from_disk_or_mem(c)
         c = self.xp.squeeze(c)
 
         u_init, A, D_init, b = self.init_simulation(c)
