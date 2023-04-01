@@ -74,3 +74,14 @@ class CPU_GPU_Abstractor:
     def _end_progress_bar(self):
         sys.stdout.write("\n")
         self.__pb_started = False
+
+    def _get_array_from_disk_or_mem(self, A):
+        if type(A) == str and path.exists(self.exec_setup.data_folder + A):
+            return self.xp.load(self.exec_setup.data_folder + A)
+        elif type(A) == cupy.ndarray or type(A) == numpy.ndarray:
+            if self.gpu:
+                return cupy.asarray(A)
+            else:
+                return cupy.asnumpy(A)
+        else:
+            raise Exception("Array has invalid type. Needs to be either a path to an array or a cupy.ndarray or a numpy.ndarray")

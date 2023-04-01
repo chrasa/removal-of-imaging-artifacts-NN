@@ -86,6 +86,8 @@ class RtmWaveSolver(CPU_GPU_Abstractor):
 
         self.xp.save(self.exec_setup.data_folder + "D.npy", D)
         self.xp.save(self.exec_setup.data_folder + "D_fine.npy", D_fine)
+
+        return D, D_fine
     
     @timeit
     def calculate_U0_D0(self, file_name="U_0.npy"):

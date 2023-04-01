@@ -102,8 +102,8 @@ class ROM(CPU_GPU_Abstractor):
 
         return I_x
     
-    def calculate_I(self, D_file_name, I_file_name=""):
-        D = self.xp.load(self.exec_setup.data_folder + D_file_name)
+    def calculate_I(self, D, I_file_name=""):
+        D = self._get_array_from_disk_or_mem(D)
         R = self._calculate_mass_matrix(D)
         I = self._calculate_imaging_function(R)
         I = I - self.I_0
