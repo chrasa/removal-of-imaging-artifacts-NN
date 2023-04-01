@@ -39,8 +39,8 @@ class RTM(CPU_GPU_Abstractor):
             return I_0
         
     def __calculate_I0(self):
-        self.calculate_U_RT(D_file_name="D_0_fine.npy", U_RT_file_name="U_0_RT.npy")
-        return self.__calculate_imaging_function(U_RT_file_name="U_0_RT.npy", I_file_name="I_0_RTM.npy")
+        self.__calculate_U_RT(D="D_0_fine.npy", U_RT_file_name="U_0_RT.npy")
+        return self.__calculate_imaging_function(U_RT_file_name="U_0_RT.npy", U_0_file_name="U_0.npy")
 
     def generate_sources(self):
         source_locations = numpy.array([15,  25,  35,  44,  54,  64,  74,  84,  93, 103, 113, 123, 133,
@@ -138,7 +138,7 @@ class RTM(CPU_GPU_Abstractor):
         if I_file_name:
             self.xp.save(self.exec_setup.data_folder + I_file_name, I)
         
-        return cupy.asnumpy(I)
+        return cupy.asnumpy(self.xp.squeeze(I))
         
 
 def main():
