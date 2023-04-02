@@ -9,7 +9,7 @@ import numpy as np
 from FractureGenerator import FractureGenerator, FractureSetup
 
 
-def main(n_images=3, precision='float64', data_folder=f".{path.sep}data{path.sep}"):
+def main(n_images=3, precision='float64', data_folder=f".{path.sep}data{path.sep}", use_gpu=False):
     sim_setup = SimulationSetup(
         N_t=40,
         N_x_im=140,
@@ -17,8 +17,8 @@ def main(n_images=3, precision='float64', data_folder=f".{path.sep}data{path.sep
         O_x=25,
         O_y=180)
     
-    ws_exec_setup = ExecutionSetup(gpu=True, precision=precision, data_folder=data_folder)
-    rtm_exec_setup = ExecutionSetup(gpu=True, precision=precision, data_folder=data_folder)
+    ws_exec_setup = ExecutionSetup(gpu=use_gpu, precision=precision, data_folder=data_folder)
+    rtm_exec_setup = ExecutionSetup(gpu=use_gpu, precision=precision, data_folder=data_folder)
     rom_exec_setup = ExecutionSetup(gpu=False, precision=precision, data_folder=data_folder)
 
     fracture_setup = FractureSetup(
@@ -58,7 +58,11 @@ def main(n_images=3, precision='float64', data_folder=f".{path.sep}data{path.sep
 
 if __name__ == "__main__":
     n_images = 10
+    use_gpu = False
+
     for i, arg in enumerate(sys.argv):
         if arg == '-n':
             n_images = sys.argv[i+1]
-    main(n_images)
+        elif arg == '-gpu':
+            use_gpu = True
+    main(n_images, use_gpu=use_gpu)
