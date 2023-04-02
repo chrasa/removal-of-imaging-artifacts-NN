@@ -1,3 +1,4 @@
+import sys
 from RTM import RTM
 from ROM import ROM
 from WaveSolver import WaveSolver
@@ -56,4 +57,8 @@ def main(n_images=3, precision='float64', data_folder=f".{path.sep}data{path.sep
 
 
 if __name__ == "__main__":
-    main(10)
+    n_images = 10
+    for i, arg in enumerate(sys.argv):
+        if arg == '-n':
+            n_images = sys.argv[i+1]
+    main(n_images)
