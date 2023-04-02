@@ -214,6 +214,16 @@ class FractureGenerator:
         indices = [y*self.setup.image_height + x for y in im_y_indices for x in im_x_indices] 
 
         return indices
+    
+    def generate_point_target(self, x=256, y=256, c_circle=2500):
+        xx, yy = np.mgrid[:self.setup.image_width, :self.setup.image_height]
+        circle = (xx - x) ** 2 + (yy - y) ** 2
+
+        background = np.full((self.setup.image_width, self.setup.image_height), self.setup.background_velocity)
+        circle = (circle < 100) * (c_circle - self.setup.background_velocity)
+
+        fracture = background + circle
+        return fracture.reshape((self.setup.image_width*self.setup.image_height))
 
 
 def normalize_image(image: np.array):
@@ -245,14 +255,18 @@ def main():
         fractured_region_width=155,
         n_fractures=3
     )
+
     generator = FractureGenerator(fracture_setup)
 
     for i in range(n_images):
         print_progress(i+1, n_images)
-        image = generator.generate_fractures()
-        np.save(f"./images/im{i}.npy", image)
+        image, _ = generator.generate_fractures()
+        np.save(f"./fractures/im{i}.npy", image)
     
     sys.stdout.write("\n")
+
+    circle = generator.generate_point_target(y=100)
+    np.save(f"./fractures/circle.npy", circle)
 
 if __name__ == "__main__":
     main()
