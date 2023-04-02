@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     for i, arg in enumerate(sys.argv):
         if arg == '-n':
-            n_images = sys.argv[i+1]
+            n_images = int(sys.argv[i+1])
         elif arg == '-gpu':
             use_gpu = True
     main(n_images, use_gpu=use_gpu)
