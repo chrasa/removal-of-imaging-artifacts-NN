@@ -3,7 +3,6 @@ from os.path import exists, sep
 from SimulationSetup import SimulationSetup
 from benchmark import timeit
 from cpu_gpu_abstraction import CPU_GPU_Abstractor, ExecutionSetup
-import cupy
 
 
 class ROM(CPU_GPU_Abstractor):
@@ -111,7 +110,7 @@ class ROM(CPU_GPU_Abstractor):
         I = self._get_image_derivative(I)
         if I_file_name:
             self.xp.save(self.exec_setup.data_folder + "I_ROM.npy", I)
-        return cupy.asnumpy(self.xp.squeeze(I))
+        return self.asnumpy(self.xp.squeeze(I))
 
 
 def main():

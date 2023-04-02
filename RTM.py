@@ -1,13 +1,7 @@
 import sys
-
 import numpy
 import scipy
-
-import cupy
-import cupyx
-
 from os import path
-
 from SimulationSetup import SimulationSetup
 from benchmark import timeit
 
@@ -57,7 +51,7 @@ class RTM(CPU_GPU_Abstractor):
         B_delta = numpy.reshape(B_delta, (512*512,50))
 
         if self.exec_setup.gpu:
-            return cupy.asarray(B_delta)
+            return self.ascupy(B_delta)
         else:
             return B_delta
     
@@ -104,7 +98,7 @@ class RTM(CPU_GPU_Abstractor):
             u[FUTURE,:,:] = factor@u[PRESENT,:,:] - u[PAST,:,:] + self.delta_t**2 *  B_delta @ D[time_idx,:,:]
 
             if (time_idx % self.nts) == 0:
-                U[int(time_idx/self.nts),:,:] = cupy.asnumpy(u[FUTURE,:,:][self.imaging_region_indices])
+                U[int(time_idx/self.nts),:,:] = self.asnumpy(u[FUTURE,:,:][self.imaging_region_indices])
 
         self._end_progress_bar()
         U.flush()
@@ -138,7 +132,7 @@ class RTM(CPU_GPU_Abstractor):
         if I_file_name:
             self.xp.save(self.exec_setup.data_folder + I_file_name, I)
         
-        return cupy.asnumpy(self.xp.squeeze(I))
+        return self.asnumpy(self.xp.squeeze(I))
         
 
 def main():

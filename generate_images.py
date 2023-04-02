@@ -43,17 +43,14 @@ def main(n_images=3, precision='float64', data_folder=f".{path.sep}data{path.sep
         fracture_image, fracture_image_in_imaging_region = fracture_generator.generate_fractures()
         D, D_fine = wave_solver.calculate_U_D(fracture_image)
 
-        D = np.load(rom_exec_setup.data_folder + "D.npy")
-        D_fine = np.load(rtm_exec_setup.data_folder + "D_fine.npy")
-
         I_rtm = rtm.calculate_I(D_fine, I_file_name="I_RTM.npy")
         I_rom = rom.calculate_I(D, I_file_name="I_ROM.py")
 
         training_data[image_idx, 0] = fracture_image_in_imaging_region
         training_data[image_idx, 1] = I_rtm
         training_data[image_idx, 2] = I_rom
-
-    np.save(data_folder + "training_data.npy", training_data)
+    
+        np.save(data_folder + "training_data.npy", training_data)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,6 @@ import sys
 from os import path
 
 import numpy
-import cupy
 
 from benchmark import timeit
 from cpu_gpu_abstraction import CPU_GPU_Abstractor, ExecutionSetup
@@ -14,7 +13,6 @@ PAST = 2
 PRESENT = 1
 FUTURE = 0
 
-Array = TypeVar('Array', numpy.array, cupy.array)
 
 class WaveSolver(CPU_GPU_Abstractor):
 
@@ -42,7 +40,7 @@ class WaveSolver(CPU_GPU_Abstractor):
         return indices
 
     @timeit 
-    def init_simulation(self, c: Array):
+    def init_simulation(self, c):
         # I_k is the identity matrix
         I_k = self.scipy.sparse.identity(self.setup.N)
 
@@ -107,7 +105,7 @@ class WaveSolver(CPU_GPU_Abstractor):
         time = self.xp.linspace(0, T, num=2*self.setup.N_t*nts)
 
         U_0 = numpy.memmap(self.exec_setup.data_folder+U_file_name, self.exec_setup.precision_np, 'w+', shape=(2*self.setup.N_t, self.setup.N_y_im*self.setup.N_x_im, self.setup.N_s))
-        U_0[0,:,:] = cupy.asnumpy(u[PRESENT][self.imaging_region_indices])      # Check if using a (sparse) projection matrix is faster?
+        U_0[0,:,:] = self.asnumpy(u[PRESENT][self.imaging_region_indices])      # Check if using a (sparse) projection matrix is faster?
         
         for i in range(1,len(time)):
             self._print_progress_bar(i+1, len(time), title="Wave solver progress")
@@ -123,7 +121,7 @@ class WaveSolver(CPU_GPU_Abstractor):
                 D[index] = self.xp.transpose(b) @ u[PRESENT]
                 D[index] = 0.5*(D[index].T + D[index])
                 
-                U_0[index,:,:] = cupy.asnumpy(u[PRESENT][self.imaging_region_indices])
+                U_0[index,:,:] = self.asnumpy(u[PRESENT][self.imaging_region_indices])
 
         self._end_progress_bar()
         U_0.flush()
