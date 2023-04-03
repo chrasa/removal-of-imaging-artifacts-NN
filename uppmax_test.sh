@@ -2,7 +2,7 @@
 #SBATCH -M snowy
 #SBATCH -A snic2022-22-1060
 #SBATCH -p node -N 1
-#SBATCH -t 12:00
+#SBATCH -t 1:00:00
 #SBATCH --qos=short
 #SBATCH --gpus=1
 #SBATCH --gpus-per-node=1

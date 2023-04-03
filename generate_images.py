@@ -7,8 +7,10 @@ from cpu_gpu_abstraction import ExecutionSetup
 from os import path
 import numpy as np
 from FractureGenerator import FractureGenerator, FractureSetup
+from benchmark import timeit
 
 
+@timeit
 def main(n_images=3, precision='float64', data_folder=f".{path.sep}data{path.sep}", use_gpu=False):
     sim_setup = SimulationSetup(
         N_t=40,
