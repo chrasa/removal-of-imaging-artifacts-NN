@@ -4,6 +4,7 @@ from scipy.stats import truncnorm, norm, uniform
 from scipy.signal import convolve2d as conv2
 import sys
 from dataclasses import dataclass
+import random
 
 @dataclass
 class FractureSetup:
@@ -13,7 +14,8 @@ class FractureSetup:
     fractured_region_height: int = 175
     O_x: int = 25
     O_y: int = 81
-    n_fractures: int = 4
+    n_fractures_min: int = 2
+    n_fractures_max: int = 6
     fracture_width: int = 4
     buffer_size: int = 40
     max_length: float = 50.0 
@@ -38,6 +40,7 @@ class FractureGenerator:
         self.length_distribution = truncnorm(a=a_length, b=b_length, loc=mean_length, scale=self.setup.std_dev_length)
         #self.length_distribution = uniform(loc=self.setup.min_length, scale=self.setup.max_length)
         self.angle_distribution = norm(loc=-90, scale=self.setup.std_dev_angle)
+        self.n_fractures_distribution = uniform(loc=self.setup.n_fractures_min, scale=(self.setup.n_fractures_max-self.setup.n_fractures_min + 1))
 
         self.x_low = self.setup.O_x
         self.x_high = self.x_low + self.setup.fractured_region_width
@@ -57,7 +60,8 @@ class FractureGenerator:
 
     def generate_fractures(self):
         fracture_image = np.full((self.setup.image_height, self.setup.image_width), self.setup.background_velocity)
-        for _ in range(self.setup.n_fractures):
+        n_fractures = self.n_fractures_distribution.rvs().astype(int)
+        for _ in range(n_fractures):
             n_iterations = 0
             fracture_is_valid = False
             selected_modifier = np.random.choice(self.modifier_distributions)
@@ -224,6 +228,9 @@ class FractureGenerator:
 
         fracture = background + circle
         return fracture.reshape((self.setup.image_width*self.setup.image_height))
+    
+    def _binomial_distribution(self):
+        return random.choice([0,1])
 
 
 def normalize_image(image: np.array):
@@ -253,7 +260,9 @@ def main():
         O_y=180,
         fractured_region_height=140,
         fractured_region_width=155,
-        n_fractures=3
+        n_fractures_min=2,
+        n_fractures_max=4,
+        max_iterations=60
     )
 
     generator = FractureGenerator(fracture_setup)
