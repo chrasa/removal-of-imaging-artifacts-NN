@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.stats import truncnorm, norm, uniform
 from scipy.signal import convolve2d as conv2
 import sys
@@ -202,14 +201,6 @@ class FractureGenerator:
 
     def _noise_helper(self, p, distribution):
         return p + distribution.rvs()
-
-    def plot_image(self, image_path):
-        image = np.load(image_path)
-        image = image.reshape(self.setup.image_height, self.setup.image_width, 1)
-        plt.gray()
-        # plt.imshow(tf.squeeze(image))
-        plt.imshow(np.squeeze(image))
-        plt.show()
 
     def get_imaging_region_indices(self):
         im_y_indices = range(self.setup.O_y, self.setup.O_y+self.setup.fractured_region_width)
