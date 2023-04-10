@@ -73,12 +73,7 @@ class FractureGenerator:
                 pixels_to_fracture = []
 
                 # Sample a valid starting position for the fracture
-                current_sample_iteration = 0
-                xs, ys = self._sample_coordinates(current_sample_iteration)
-
-                while self._is_invalid_pixel(fracture_image, xs, ys):
-                    current_sample_iteration += 1
-                    xs, ys = self._sample_coordinates(current_sample_iteration)                
+                xs, ys = self._get_fracture_starting_position(fracture_image)                
 
                 pixels_to_fracture.append((xs, ys))
 
@@ -125,6 +120,13 @@ class FractureGenerator:
         fracture_image = fracture_image.reshape(self.setup.image_width*self.setup.image_height)
 
         return fracture_image, fracture_image[self.get_imaging_region_indices()]
+
+    def _get_fracture_starting_position(self, fracture_image):
+        for _ in range(self.setup.max_iterations):
+            xs, ys = self._sample_coordinates()
+            if not self._is_invalid_pixel(fracture_image, xs, ys):
+                return xs, ys
+        raise RuntimeError("Unable to fit fracture in image")
     
     def _create_buffer(self, image, pixels_to_fracture):
         for x, y in pixels_to_fracture:
@@ -154,10 +156,7 @@ class FractureGenerator:
                y < self.setup.O_y or \
                y >= self.setup.O_y + self.setup.fractured_region_height
 
-    def _sample_coordinates(self, current_sample_iteration: int):
-        if current_sample_iteration > self.setup.max_iterations:
-            raise RuntimeError("Unable to fit fracture in image")
-
+    def _sample_coordinates(self):
         xs = int(np.random.uniform(self.x_low, self.x_high))
         ys = int(np.random.uniform(self.y_low, self.y_high))
         return xs, ys
