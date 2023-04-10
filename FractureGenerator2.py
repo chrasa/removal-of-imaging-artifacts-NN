@@ -66,25 +66,18 @@ class FractureGenerator:
             selected_modifier = np.random.choice(self.modifier_distributions)
             modifier_value = selected_modifier.rvs()
 
-            while (not fracture_is_valid) and (n_iterations < self.setup.max_iterations): 
+            while n_iterations < self.setup.max_iterations: 
+                n_iterations += 1
                 fracture_length = self.length_distribution.rvs().astype(int)
                 fracture_angle = self.angle_distribution.rvs()
 
-                # Sample a valid starting position for the fracture
-                xs, ys = self._get_fracture_starting_position()                
+                xs, ys = self._get_fracture_starting_position()
+                fracture_is_valid = self.draw_fracture(xs, ys, fracture_length, fracture_angle, modifier_value)
 
-                self.pixels_to_fracture = []
-                self.pixels_to_fracture.append((xs, ys))
-
-                fracture_is_valid = self._draw_line(xs, ys, fracture_length, fracture_angle)
-
-                if not fracture_is_valid:
-                    continue
-
-                # Create the fracture
-                self._create_buffer()
-                for x, y in self.pixels_to_fracture:
-                    self._fracture_pixel(x, y, modifier_value)
+                if fracture_is_valid:
+                    break
+                else:
+                    continue             
 
             if not fracture_is_valid:
                 raise RuntimeError("Unable to fit fracture in image")
@@ -98,6 +91,20 @@ class FractureGenerator:
         self.fracture_image = self.fracture_image.reshape(self.setup.image_width*self.setup.image_height)
 
         return self.fracture_image, self.fracture_image[self.get_imaging_region_indices()]
+    
+    def draw_fracture(self, xs, ys, length, angle, modifier_value):
+        self.pixels_to_fracture = []
+        self.pixels_to_fracture.append((xs, ys))
+
+        fracture_is_valid = self._draw_line(xs, ys, length, angle)
+
+        if not fracture_is_valid:
+            return False
+
+        self._create_buffer()
+        for x, y in self.pixels_to_fracture:
+            self._fracture_pixel(x, y, modifier_value)
+        return True
 
     def _draw_line(self, xs, ys, fracture_length, fracture_angle):
 
