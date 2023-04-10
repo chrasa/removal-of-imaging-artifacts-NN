@@ -69,22 +69,22 @@ class FractureGenerator:
             while (not fracture_is_valid) and (n_iterations < self.setup.max_iterations): 
                 fracture_length = self.length_distribution.rvs().astype(int)
                 fracture_angle = self.angle_distribution.rvs()
-                pixels_to_fracture = []
 
                 # Sample a valid starting position for the fracture
                 xs, ys = self._get_fracture_starting_position()                
 
-                pixels_to_fracture.append((xs, ys))
+                self.pixels_to_fracture = []
+                self.pixels_to_fracture.append((xs, ys))
 
-                fracture_is_valid = self._draw_fracture(xs, ys, fracture_length, fracture_angle, pixels_to_fracture)
+                fracture_is_valid = self._draw_line(xs, ys, fracture_length, fracture_angle)
 
                 if not fracture_is_valid:
                     continue
 
                 # Create the fracture
-                self._create_buffer(self.fracture_image, pixels_to_fracture)
-                for x, y in pixels_to_fracture:
-                    self._fracture_pixel(self.fracture_image, x, y, modifier_value)
+                self._create_buffer()
+                for x, y in self.pixels_to_fracture:
+                    self._fracture_pixel(x, y, modifier_value)
 
             if not fracture_is_valid:
                 raise RuntimeError("Unable to fit fracture in image")
@@ -99,8 +99,8 @@ class FractureGenerator:
 
         return self.fracture_image, self.fracture_image[self.get_imaging_region_indices()]
 
-    def _draw_fracture(self, xs, ys, fracture_length, fracture_angle, pixels_to_fracture):
-        
+    def _draw_line(self, xs, ys, fracture_length, fracture_angle):
+
         fractured_pixels = 1
         while fractured_pixels < fracture_length:
             xs = xs + np.cos(fracture_angle)
@@ -112,8 +112,8 @@ class FractureGenerator:
             if self._is_invalid_pixel(x_int, y_int):
                 return False
 
-            if (x_int, y_int) not in pixels_to_fracture:
-                pixels_to_fracture.append((x_int, y_int))
+            if (x_int, y_int) not in self.pixels_to_fracture:
+                self.pixels_to_fracture.append((x_int, y_int))
                 fractured_pixels += 1
         return True
 
@@ -124,17 +124,17 @@ class FractureGenerator:
                 return xs, ys
         raise RuntimeError("Unable to fit fracture in image")
     
-    def _create_buffer(self, image, pixels_to_fracture):
-        for x, y in pixels_to_fracture:
+    def _create_buffer(self):
+        for x, y in self.pixels_to_fracture:
             for i in range(x - self.setup.buffer_size, x + self.setup.buffer_size):
                 for j in range(y - self.setup.buffer_size, y + self.setup.buffer_size):
                     if not self._out_of_bounds(i, j):
-                        image[j, i] = -1
+                        self.fracture_image[j, i] = -1
 
-    def _fracture_pixel(self, image, x, y, modifier_value):
+    def _fracture_pixel(self, x, y, modifier_value):
         for i in range(x-int(self.setup.fracture_width/2), x+int(self.setup.fracture_width/2)):
             for j in range(y-int(self.setup.fracture_width/2), y+int(self.setup.fracture_width/2)):
-                image[j, i] = self.setup.background_velocity*modifier_value
+                self.fracture_image[j, i] = self.setup.background_velocity*modifier_value
     
     def _blur_fracture_edges(self, image):
         convolved = image.copy()
