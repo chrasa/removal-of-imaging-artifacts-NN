@@ -76,32 +76,11 @@ class FractureGenerator:
 
                 pixels_to_fracture.append((xs, ys))
 
-                x_exact = xs
-                y_exact = ys
+                fracture_is_valid = self._draw_fracture(xs, ys, fracture_length, fracture_angle, pixels_to_fracture)
 
-                # Add the rest of the pixels to the fracture
-                fractured_pixels = 1
-                pixel_is_valid = True
-                while fractured_pixels < fracture_length:
-                    x_exact = x_exact + np.cos(fracture_angle)
-                    y_exact = y_exact + np.sin(fracture_angle)
-
-                    x_index = x_exact.astype(int)
-                    y_index = y_exact.astype(int)
-
-                    if self._is_invalid_pixel(x_index, y_index):
-                        n_iterations += 1
-                        pixel_is_valid = False
-                        break
-
-                    if (x_index, y_index) not in pixels_to_fracture:
-                        pixels_to_fracture.append((x_index, y_index))
-                        fractured_pixels += 1
-
-                if not pixel_is_valid:
+                if not fracture_is_valid:
                     continue
 
-                fracture_is_valid = True
                 # Create the fracture
                 self._create_buffer(self.fracture_image, pixels_to_fracture)
                 for x, y in pixels_to_fracture:
@@ -119,6 +98,24 @@ class FractureGenerator:
         self.fracture_image = self.fracture_image.reshape(self.setup.image_width*self.setup.image_height)
 
         return self.fracture_image, self.fracture_image[self.get_imaging_region_indices()]
+
+    def _draw_fracture(self, xs, ys, fracture_length, fracture_angle, pixels_to_fracture):
+        
+        fractured_pixels = 1
+        while fractured_pixels < fracture_length:
+            xs = xs + np.cos(fracture_angle)
+            ys = ys + np.sin(fracture_angle)
+
+            x_int = xs.astype(int)
+            y_int = ys.astype(int)
+
+            if self._is_invalid_pixel(x_int, y_int):
+                return False
+
+            if (x_int, y_int) not in pixels_to_fracture:
+                pixels_to_fracture.append((x_int, y_int))
+                fractured_pixels += 1
+        return True
 
     def _get_fracture_starting_position(self):
         for _ in range(self.setup.max_iterations):
