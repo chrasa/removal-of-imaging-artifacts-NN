@@ -58,7 +58,7 @@ class FractureGenerator:
         self.modifier_distributions = [self.low_velocity_modifier, self.high_velocity_modifier]
 
     def generate_fractures(self):
-        fracture_image = np.full((self.setup.image_height, self.setup.image_width), self.setup.background_velocity)
+        self.fracture_image = np.full((self.setup.image_height, self.setup.image_width), self.setup.background_velocity)
         n_fractures = self.n_fractures_distribution.rvs().astype(int)
         for _ in range(n_fractures):
             n_iterations = 0
@@ -72,7 +72,7 @@ class FractureGenerator:
                 pixels_to_fracture = []
 
                 # Sample a valid starting position for the fracture
-                xs, ys = self._get_fracture_starting_position(fracture_image)                
+                xs, ys = self._get_fracture_starting_position()                
 
                 pixels_to_fracture.append((xs, ys))
 
@@ -89,7 +89,7 @@ class FractureGenerator:
                     x_index = x_exact.astype(int)
                     y_index = y_exact.astype(int)
 
-                    if self._is_invalid_pixel(fracture_image, x_index, y_index):
+                    if self._is_invalid_pixel(x_index, y_index):
                         n_iterations += 1
                         pixel_is_valid = False
                         break
@@ -103,27 +103,27 @@ class FractureGenerator:
 
                 fracture_is_valid = True
                 # Create the fracture
-                self._create_buffer(fracture_image, pixels_to_fracture)
+                self._create_buffer(self.fracture_image, pixels_to_fracture)
                 for x, y in pixels_to_fracture:
-                    self._fracture_pixel(fracture_image, x, y, modifier_value)
+                    self._fracture_pixel(self.fracture_image, x, y, modifier_value)
 
             if not fracture_is_valid:
                 raise RuntimeError("Unable to fit fracture in image")
 
         # Produce the resulting image
-        fracture_image[fracture_image == -1] = self.setup.background_velocity # Remove the buffer
+        self.fracture_image[self.fracture_image == -1] = self.setup.background_velocity # Remove the buffer
         # fracture_image = self._blur_fracture_edges(fracture_image)
         # fracture_image = self._add_noise(fracture_image, 1, 0.1)
         # fracture_image = tf.convert_to_tensor(fracture_image)
         # resulting_image = tf.math.add(image, fracture_image)
-        fracture_image = fracture_image.reshape(self.setup.image_width*self.setup.image_height)
+        self.fracture_image = self.fracture_image.reshape(self.setup.image_width*self.setup.image_height)
 
-        return fracture_image, fracture_image[self.get_imaging_region_indices()]
+        return self.fracture_image, self.fracture_image[self.get_imaging_region_indices()]
 
-    def _get_fracture_starting_position(self, fracture_image):
+    def _get_fracture_starting_position(self):
         for _ in range(self.setup.max_iterations):
             xs, ys = self._sample_coordinates()
-            if not self._is_invalid_pixel(fracture_image, xs, ys):
+            if not self._is_invalid_pixel(xs, ys):
                 return xs, ys
         raise RuntimeError("Unable to fit fracture in image")
     
@@ -160,27 +160,27 @@ class FractureGenerator:
         ys = int(np.random.uniform(self.y_low, self.y_high))
         return xs, ys
 
-    def _is_invalid_pixel(self, image, x, y):
+    def _is_invalid_pixel(self, x, y):
         if self._out_of_bounds(x, y):
             return True
         
-        elif self._collides_with_fracture(image, x, y):
+        elif self._collides_with_fracture(x, y):
             return True
         
-        elif self._pixel_in_buffer(image, x, y):
+        elif self._pixel_in_buffer(x, y):
             return True
 
         else:
             return False
 
-    def _collides_with_fracture(self, image, x, y):
-        collides = image[y, x] < self.setup.background_velocity and image[y, x] > -1 \
-            or image[y, x] > self.setup.background_velocity
+    def _collides_with_fracture(self, x, y):
+        collides = self.fracture_image[y, x] < self.setup.background_velocity and self.fracture_image[y, x] > -1 \
+            or self.fracture_image[y, x] > self.setup.background_velocity
 
         return collides
 
-    def _pixel_in_buffer(self, image, x, y):
-        return image[y, x] == -1
+    def _pixel_in_buffer(self, x, y):
+        return self.fracture_image[y, x] == -1
 
     def _add_noise(self, image: np.array, mean_noise: int, std_dev_noise: int):
         gauss_noise = np.random.normal(loc=self.setup.mean_noise,
