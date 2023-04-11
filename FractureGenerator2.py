@@ -10,7 +10,9 @@ class FractureGenerator(FractureDrawer):
         super(FractureGenerator, self).__init__(fracture_setup=fracture_setup)
 
         self.setup = fracture_setup
+        self.init_distributions()
 
+    def init_distributions(self):
         mean_length = (self.setup.max_length + self.setup.max_length) / 2
         a_length = (self.setup.min_length - mean_length) / self.setup.std_dev_length
         b_length = (self.setup.max_length - mean_length) / self.setup.std_dev_length
@@ -22,12 +24,12 @@ class FractureGenerator(FractureDrawer):
 
         a_low = (0.3 - 0.45) / 0.05
         b_low = (0.6 - 0.45) / 0.05 
-        self.low_velocity_modifier = truncnorm(a_low, b_low, loc=0.45, scale=0.05)
+        low_velocity_modifier = truncnorm(a_low, b_low, loc=0.45, scale=0.05)
 
         a_high = (1.5 - 2.25) / 0.25
         b_high = (3.0 - 2.25) / 0.25
-        self.high_velocity_modifier = truncnorm(a_high, b_high, loc=2.25, scale=0.25)
-        self.modifier_distributions = [self.low_velocity_modifier, self.high_velocity_modifier]
+        high_velocity_modifier = truncnorm(a_high, b_high, loc=2.25, scale=0.25)
+        self.modifier_distributions = [low_velocity_modifier, high_velocity_modifier]
 
     def generate_fractures(self):
         self.fracture_image = np.full((self.setup.image_height, self.setup.image_width), self.setup.background_velocity)
