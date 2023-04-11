@@ -20,3 +20,6 @@ class FractureSetup:
     std_dev_noise: float = 0.2
     max_iterations: int = 15
     background_velocity: float = 1000.0
+    double_fracture_radius_min: int = 5
+    double_fracture_radius_max: int = 20
+    double_fracture_std_dev_angle: float = 10

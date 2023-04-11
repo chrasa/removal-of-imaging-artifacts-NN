@@ -21,6 +21,9 @@ class FractureGenerator(FractureDrawer):
         #self.length_distribution = uniform(loc=self.setup.min_length, scale=self.setup.max_length)
         self.angle_distribution = norm(loc=-90, scale=self.setup.std_dev_angle)
         self.n_fractures_distribution = uniform(loc=self.setup.n_fractures_min, scale=(self.setup.n_fractures_max-self.setup.n_fractures_min + 1))
+        self.double_fracture_radius_distribution = uniform(loc=self.setup.double_fracture_radius_min, scale=(self.setup.double_fracture_radius_max-self.setup.double_fracture_radius_min+1))
+        self.double_fracture_start_point_angle_distribution = uniform(loc=0, scale=360)
+        self.double_fracture_angle_distribution = norm(loc=0, scale=self.setup.double_fracture_std_dev_angle)
 
         a_low = (0.3 - 0.45) / 0.05
         b_low = (0.6 - 0.45) / 0.05 
@@ -77,12 +80,15 @@ class FractureGenerator(FractureDrawer):
         fracture_velocity1 = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
 
         fracture_length2 = self.length_distribution.rvs().astype(int)
-        fracture_angle2 = fracture_angle1 + 2
+        fracture_angle2 = fracture_angle1 + self.double_fracture_angle_distribution.rvs()
         fracture_velocity2 = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
 
         xs1, ys1 = self._get_fracture_starting_position()
-        xs2 = xs1+5
-        ys2 = ys1+5
+
+        s2_radius = self.double_fracture_radius_distribution.rvs()
+        s2_angle = self.double_fracture_start_point_angle_distribution.rvs()
+        xs2 = int( xs1 + np.cos(np.deg2rad(s2_angle)) * s2_radius )
+        ys2 = int( ys1 + np.sin(np.deg2rad(s2_angle)) * s2_radius )
         return self.draw_two_fractures(xs1, ys1, fracture_length1, fracture_angle1, fracture_velocity1, xs2, ys2, fracture_length2, fracture_angle2, fracture_velocity2)
 
 

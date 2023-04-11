@@ -74,10 +74,9 @@ class FractureDrawer:
                         self.fracture_image[j, i] = -1
 
     def _fracture_pixel(self, x, y, velocity):
-            self.fracture_image[y,x] = velocity
-        # for i in range(x-int(self.setup.fracture_width/2), x+int(self.setup.fracture_width/2)):
-        #     for j in range(y-int(self.setup.fracture_width/2), y+int(self.setup.fracture_width/2)):
-        #         self.fracture_image[j, i] = velocity
+        for i in range(x-int(self.setup.fracture_width/2), x+int(self.setup.fracture_width/2)):
+            for j in range(y-int(self.setup.fracture_width/2), y+int(self.setup.fracture_width/2)):
+                self.fracture_image[j, i] = velocity
     
     def _blur_fracture_edges(self, image):
         convolved = image.copy()
