@@ -13,20 +13,19 @@ class FractureDrawer:
         self.y_high = self.y_low + self.setup.fractured_region_height
     
     def draw_fracture(self, xs, ys, length, angle, velocity):
-        self.pixels_to_fracture = []
-        self.pixels_to_fracture.append((xs, ys))
+        pixels = self._draw_line(xs, ys, length, angle)
 
-        fracture_is_valid = self._draw_line(xs, ys, length, angle)
-
-        if not fracture_is_valid:
+        if pixels is False:
             return False
 
-        self._create_buffer()
-        for x, y in self.pixels_to_fracture:
+        self._create_buffer(pixels)
+        for x, y in pixels:
             self._fracture_pixel(x, y, velocity)
         return True
 
     def _draw_line(self, xs, ys, fracture_length, fracture_angle):
+        pixels = []
+        pixels.append((xs, ys))
 
         fractured_pixels = 1
         while fractured_pixels < fracture_length:
@@ -39,13 +38,13 @@ class FractureDrawer:
             if self._is_invalid_pixel(x_int, y_int):
                 return False
 
-            if (x_int, y_int) not in self.pixels_to_fracture:
-                self.pixels_to_fracture.append((x_int, y_int))
+            if (x_int, y_int) not in pixels:
+                pixels.append((x_int, y_int))
                 fractured_pixels += 1
-        return True
+        return pixels
     
-    def _create_buffer(self):
-        for x, y in self.pixels_to_fracture:
+    def _create_buffer(self, pixels):
+        for x, y in pixels:
             for i in range(x - self.setup.buffer_size, x + self.setup.buffer_size):
                 for j in range(y - self.setup.buffer_size, y + self.setup.buffer_size):
                     if not self._out_of_bounds(i, j):

@@ -37,15 +37,12 @@ class FractureGenerator(FractureDrawer):
         for _ in range(n_fractures):
             n_iterations = 0
             fracture_is_valid = False
-            selected_modifier = np.random.choice(self.modifier_distributions)
-            modifier_value = selected_modifier.rvs()
-            fracture_velocity = modifier_value*self.setup.background_velocity
+            fracture_velocity = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
 
             while n_iterations < self.setup.max_iterations: 
                 n_iterations += 1
                 fracture_length = self.length_distribution.rvs().astype(int)
                 fracture_angle = self.angle_distribution.rvs()
-
                 xs, ys = self._get_fracture_starting_position()
                 fracture_is_valid = self.draw_fracture(xs, ys, fracture_length, fracture_angle, fracture_velocity)
 
