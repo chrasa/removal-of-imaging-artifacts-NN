@@ -33,20 +33,25 @@ class FractureGenerator(FractureDrawer):
 
     def generate_fractures(self):
         self.fracture_image = np.full((self.setup.image_height, self.setup.image_width), self.setup.background_velocity)
-        n_fractures = self.n_fractures_distribution.rvs().astype(int)
-        for _ in range(n_fractures):
+        n_fractures_to_place = self.n_fractures_distribution.rvs().astype(int)
+        n_fractures = 0
+
+        while n_fractures < n_fractures_to_place:
             n_iterations = 0
             fracture_is_valid = False
-            fracture_velocity = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
 
             while n_iterations < self.setup.max_iterations: 
                 n_iterations += 1
-                fracture_length = self.length_distribution.rvs().astype(int)
-                fracture_angle = self.angle_distribution.rvs()
-                xs, ys = self._get_fracture_starting_position()
-                fracture_is_valid = self.draw_fracture(xs, ys, fracture_length, fracture_angle, fracture_velocity)
+
+                if self._binomial_distribution():
+                    fracture_is_valid = self.add_random_single_fracture()
+                    n_new_fractures = 1
+                else:
+                    fracture_is_valid = self.add_random_double_fracture()
+                    n_new_fractures = 2
 
                 if fracture_is_valid:
+                    n_fractures += n_new_fractures
                     break
                 else:
                     continue             
@@ -63,6 +68,21 @@ class FractureGenerator(FractureDrawer):
         self.fracture_image = self.fracture_image.reshape(self.setup.image_width*self.setup.image_height)
 
         return self.fracture_image, self.fracture_image[self.get_imaging_region_indices()]
+    
+    def add_random_double_fracture(self):
+        fracture_length = self.length_distribution.rvs().astype(int)
+        fracture_angle = self.angle_distribution.rvs()
+        fracture_velocity = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
+        xs, ys = self._get_fracture_starting_position()
+        return self.draw_two_fractures(xs, ys, fracture_length, fracture_angle, fracture_velocity, xs+10, ys+10, fracture_length, fracture_angle, fracture_velocity)
+
+
+    def add_random_single_fracture(self):
+        fracture_length = self.length_distribution.rvs().astype(int)
+        fracture_angle = self.angle_distribution.rvs()
+        fracture_velocity = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
+        xs, ys = self._get_fracture_starting_position()
+        return self.draw_fracture(xs, ys, fracture_length, fracture_angle, fracture_velocity)
     
     def _get_fracture_starting_position(self):
         for _ in range(self.setup.max_iterations):

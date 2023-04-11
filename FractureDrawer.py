@@ -22,6 +22,25 @@ class FractureDrawer:
         for x, y in pixels:
             self._fracture_pixel(x, y, velocity)
         return True
+    
+    def draw_two_fractures(self, xs1, ys1, length1, angle1, velocity1, xs2, ys2, length2, angle2, velocity2):
+        pixels1 = self._draw_line(xs1, ys1, length1, angle1)
+        if pixels1 is False:
+            return False
+        
+        pixels2 = self._draw_line(xs2, ys2, length2, angle2)
+        if pixels2 is False:
+            return False
+
+        self._create_buffer(pixels1)
+        self._create_buffer(pixels2)
+
+        for x, y in pixels1:
+            self._fracture_pixel(x, y, velocity1)
+
+        for x, y in pixels2:
+            self._fracture_pixel(x, y, velocity2)
+        return True
 
     def _draw_line(self, xs, ys, fracture_length, fracture_angle):
         pixels = []
