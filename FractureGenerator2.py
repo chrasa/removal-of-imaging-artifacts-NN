@@ -70,11 +70,20 @@ class FractureGenerator(FractureDrawer):
         return self.fracture_image, self.fracture_image[self.get_imaging_region_indices()]
     
     def add_random_double_fracture(self):
-        fracture_length = self.length_distribution.rvs().astype(int)
-        fracture_angle = self.angle_distribution.rvs()
-        fracture_velocity = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
-        xs, ys = self._get_fracture_starting_position()
-        return self.draw_two_fractures(xs, ys, fracture_length, fracture_angle, fracture_velocity, xs+10, ys+10, fracture_length, fracture_angle, fracture_velocity)
+        fracture_length1 = self.length_distribution.rvs().astype(int)
+        fracture_angle1 = self.angle_distribution.rvs()
+        if self._binomial_distribution():
+            fracture_angle1 += 180
+        fracture_velocity1 = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
+
+        fracture_length2 = self.length_distribution.rvs().astype(int)
+        fracture_angle2 = fracture_angle1 + 2
+        fracture_velocity2 = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
+
+        xs1, ys1 = self._get_fracture_starting_position()
+        xs2 = xs1+5
+        ys2 = ys1+5
+        return self.draw_two_fractures(xs1, ys1, fracture_length1, fracture_angle1, fracture_velocity1, xs2, ys2, fracture_length2, fracture_angle2, fracture_velocity2)
 
 
     def add_random_single_fracture(self):
@@ -134,7 +143,7 @@ def main():
         fractured_region_width=155,
         n_fractures_min=2,
         n_fractures_max=4,
-        max_iterations=60
+        max_iterations=200
     )
 
     generator = FractureGenerator(fracture_setup)
