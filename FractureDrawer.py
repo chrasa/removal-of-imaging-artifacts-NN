@@ -7,11 +7,6 @@ class FractureDrawer:
     def __init__(self, fracture_setup: FractureSetup) -> None:
         self.setup = fracture_setup
 
-        self.x_low = self.setup.O_x
-        self.x_high = self.x_low + self.setup.fractured_region_width
-        self.y_low = self.setup.O_y
-        self.y_high = self.y_low + self.setup.fractured_region_height
-    
     def draw_fracture(self, xs, ys, length, angle, velocity):
         pixels = self._draw_line(xs, ys, length, angle)
 
@@ -47,6 +42,9 @@ class FractureDrawer:
         return True
 
     def _draw_line(self, xs, ys, fracture_length, fracture_angle):
+        if self._is_invalid_pixel(xs, ys):
+            return False
+        
         pixels = []
         pixels.append((xs, ys))
 
@@ -71,12 +69,12 @@ class FractureDrawer:
             for i in range(x - self.setup.buffer_size, x + self.setup.buffer_size):
                 for j in range(y - self.setup.buffer_size, y + self.setup.buffer_size):
                     if not self._out_of_bounds(i, j):
-                        self.fracture_image[j, i] = -1
+                        self.fracture_image[i, j] = -1
 
     def _fracture_pixel(self, x, y, velocity):
         for i in range(x-int(self.setup.fracture_width/2), x+int(self.setup.fracture_width/2)):
             for j in range(y-int(self.setup.fracture_width/2), y+int(self.setup.fracture_width/2)):
-                self.fracture_image[j, i] = velocity
+                self.fracture_image[i, j] = velocity
     
     def _blur_fracture_edges(self, image):
         convolved = image.copy()
@@ -94,11 +92,6 @@ class FractureDrawer:
                y < self.setup.O_y or \
                y >= self.setup.O_y + self.setup.fractured_region_height
 
-    def _sample_coordinates(self):
-        xs = int(np.random.uniform(self.x_low, self.x_high))
-        ys = int(np.random.uniform(self.y_low, self.y_high))
-        return xs, ys
-
     def _is_invalid_pixel(self, x, y):
         if self._out_of_bounds(x, y):
             return True
@@ -113,13 +106,13 @@ class FractureDrawer:
             return False
 
     def _collides_with_fracture(self, x, y):
-        collides = self.fracture_image[y, x] < self.setup.background_velocity and self.fracture_image[y, x] > -1 \
-            or self.fracture_image[y, x] > self.setup.background_velocity
+        collides = self.fracture_image[x, y] < self.setup.background_velocity and self.fracture_image[x, y] > -1 \
+            or self.fracture_image[x, y] > self.setup.background_velocity
 
         return collides
 
     def _pixel_in_buffer(self, x, y):
-        return self.fracture_image[y, x] == -1
+        return self.fracture_image[x, y] == -1
 
     def _add_noise(self, image: np.array, mean_noise: int, std_dev_noise: int):
         gauss_noise = np.random.normal(loc=self.setup.mean_noise,

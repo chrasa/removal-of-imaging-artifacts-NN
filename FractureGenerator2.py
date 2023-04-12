@@ -19,7 +19,7 @@ class FractureGenerator(FractureDrawer):
 
         self.length_distribution = truncnorm(a=a_length, b=b_length, loc=mean_length, scale=self.setup.std_dev_length)
         #self.length_distribution = uniform(loc=self.setup.min_length, scale=self.setup.max_length)
-        self.angle_distribution = norm(loc=-90, scale=self.setup.std_dev_angle)
+        self.angle_distribution = norm(loc=0, scale=self.setup.std_dev_angle)
         self.n_fractures_distribution = uniform(loc=self.setup.n_fractures_min, scale=(self.setup.n_fractures_max-self.setup.n_fractures_min + 1))
         self.double_fracture_radius_distribution = uniform(loc=self.setup.double_fracture_radius_min, scale=(self.setup.double_fracture_radius_max-self.setup.double_fracture_radius_min+1))
         self.double_fracture_start_point_angle_distribution = uniform(loc=0, scale=360)
@@ -106,6 +106,11 @@ class FractureGenerator(FractureDrawer):
                 return xs, ys
         raise RuntimeError("Unable to fit fracture in image")
     
+    def _sample_coordinates(self):
+        xs = int(np.random.uniform(self.setup.O_x, self.setup.O_x+self.setup.fractured_region_width))
+        ys = int(np.random.uniform(self.setup.O_y, self.setup.O_y+self.setup.fractured_region_height))
+        return xs, ys
+    
     def generate_point_target(self, x=256, y=256, c_circle=2500):
         xx, yy = np.mgrid[:self.setup.image_width, :self.setup.image_height]
         circle = (xx - x) ** 2 + (yy - y) ** 2
@@ -143,10 +148,10 @@ def main():
             n_images = int(sys.argv[i+1])
 
     fracture_setup = FractureSetup(
-        O_x=25,
-        O_y=180,
-        fractured_region_height=140,
-        fractured_region_width=155,
+        O_x=156,
+        O_y=25,
+        fractured_region_height=100,
+        fractured_region_width=200,
         n_fractures_min=2,
         n_fractures_max=4,
         max_iterations=200
