@@ -5,9 +5,9 @@ from scipy.stats import truncnorm, norm, uniform
 from FractureSetup import FractureSetup
 from FractureDrawer import FractureDrawer
 
-class FractureGenerator(FractureDrawer):
+class FracturePlacer(FractureDrawer):
     def __init__(self, fracture_setup: FractureSetup = FractureSetup() ):
-        super(FractureGenerator, self).__init__(fracture_setup=fracture_setup)
+        super(FracturePlacer, self).__init__(fracture_setup=fracture_setup)
 
         self.setup = fracture_setup
         self.init_distributions()
@@ -149,7 +149,7 @@ def main():
         max_iterations=200
     )
 
-    generator = FractureGenerator(fracture_setup)
+    generator = FracturePlacer(fracture_setup)
 
     for i in range(n_images):
         print_progress(i+1, n_images)
