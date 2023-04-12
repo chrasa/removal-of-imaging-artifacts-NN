@@ -40,6 +40,17 @@ class FractureDrawer:
         for x, y in pixels2:
             self._fracture_pixel(x, y, velocity2)
         return True
+    
+    def draw_point_target(self, x, y, radius, velocity):
+        pixels = self._draw_point(x, y, radius)
+        if pixels is False:
+            return False
+        
+        self._create_buffer(pixels)
+
+        for x, y in pixels:
+            self.fracture_image[x,y] = velocity
+        return True
 
     def _draw_line(self, xs, ys, fracture_length, fracture_angle):
         if self._is_invalid_pixel(xs, ys):
@@ -62,6 +73,26 @@ class FractureDrawer:
             if (x_int, y_int) not in pixels:
                 pixels.append((x_int, y_int))
                 fractured_pixels += 1
+        return pixels
+    
+    def _draw_point(self, x, y, radius):
+        if self._is_invalid_pixel(x, y):
+            return False
+        
+        pixels = []
+        pixels.append((x, y))
+
+        xx, yy = np.mgrid[:self.setup.image_width, :self.setup.image_height]
+        circle = np.sqrt((xx - x) ** 2 + (yy - y) ** 2)
+
+        circle = np.where((circle < radius))
+
+        for x, y in zip(circle[0],circle[1]):
+            if self._is_invalid_pixel(x, y):
+                return False
+            if (x, y) not in pixels:
+                pixels.append((x,y))
+
         return pixels
     
     def _create_buffer(self, pixels):

@@ -61,6 +61,8 @@ class FractureGenerator(FractureDrawer):
 
             if not fracture_is_valid:
                 raise RuntimeError("Unable to fit fracture in image")
+            
+        # self.draw_point_target(256, 100, 10, 500)
 
         # Produce the resulting image
         self.fracture_image[self.fracture_image == -1] = self.setup.background_velocity # Remove the buffer
@@ -110,16 +112,6 @@ class FractureGenerator(FractureDrawer):
         xs = int(np.random.uniform(self.setup.O_x, self.setup.O_x+self.setup.fractured_region_width))
         ys = int(np.random.uniform(self.setup.O_y, self.setup.O_y+self.setup.fractured_region_height))
         return xs, ys
-    
-    def generate_point_target(self, x=256, y=256, c_circle=2500):
-        xx, yy = np.mgrid[:self.setup.image_width, :self.setup.image_height]
-        circle = (xx - x) ** 2 + (yy - y) ** 2
-
-        background = np.full((self.setup.image_width, self.setup.image_height), self.setup.background_velocity)
-        circle = (circle < 100) * (c_circle - self.setup.background_velocity)
-
-        fracture = background + circle
-        return fracture.reshape((self.setup.image_width*self.setup.image_height))
     
     def _binomial_distribution(self):
         return random.choice([0,1])
