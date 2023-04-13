@@ -3,6 +3,8 @@ import sys
 from time import sleep
 import numpy as np
 from multiprocessing import Process, Value
+from matplotlib import pyplot as plt
+import matplotlib.patches as patches
 from FractureSetup import FractureSetup
 from FractureGenerator import FractureGenerator
 from retry import retry
@@ -11,11 +13,12 @@ from benchmark import ProgressBar
 progress = Value('i', 0)
 
 class FractureMassGenerator(Process):
-    def __init__(self, n, start_idx, fracture_setup: FractureSetup) -> None:
+    def __init__(self, n, start_idx, fracture_setup: FractureSetup, plot_fractures=False) -> None:
         super().__init__()
         self.n = n
         self.start_index = start_idx
         self.fracture_generator = FractureGenerator(fracture_setup)
+        self.plot_fractures = plot_fractures
 
     def run(self):
         img_idx = self.start_index
@@ -28,6 +31,21 @@ class FractureMassGenerator(Process):
     def _generate_fracture_image(self, idx):
         img, _ = self.fracture_generator.generate_fractures()
         np.save(f"fractures/im{idx}.npy", img)
+        if self.plot_fractures:
+            self._plot_fracture(img, f"im{idx}")
+
+    def _plot_fracture(self, fracture_img, img_title):
+        image = fracture_img.reshape(self.fracture_generator.setup.image_height, self.fracture_generator.setup.image_width)
+    
+        fig, ax = plt.subplots()
+        ax.set_title(img_title)
+        ax.imshow(image.T)
+        rect = patches.Rectangle((self.fracture_generator.setup.O_x, self.fracture_generator.setup.O_y), self.fracture_generator.setup.fractured_region_width, self.fracture_generator.setup.fractured_region_height, linewidth=1, edgecolor='r', facecolor='none')
+        ax.add_patch(rect)
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        plt.savefig(f'fractures{ os.path.sep }img{ os.path.sep }{img_title}.jpg', dpi=150)
+        plt.close()
 
 
     def __increase_progress_bar(self):
@@ -60,12 +78,15 @@ class MpProgressBar(Process):
 def main():
     n_processes = os.cpu_count()
     n_images = n_processes * 10
+    plot_fractures = False
 
     for i, arg in enumerate(sys.argv):
         if arg == '-n':
             n_images = int(sys.argv[i+1])
         elif arg == '-p':
             n_processes = int(sys.argv[i+1])
+        elif arg == '-plot_fractures':
+            plot_fractures = True
 
     if (n_images%n_processes) != 0:
         raise Exception("Number of Images needs to be a multiple of the number of processes")
@@ -83,7 +104,7 @@ def main():
         max_iterations=200
     )
 
-    fracture_generators = [FractureMassGenerator(images_per_generator, start_idx, fracture_setup) for start_idx in range(0, n_images, images_per_generator)]
+    fracture_generators = [FractureMassGenerator(images_per_generator, start_idx, fracture_setup, plot_fractures) for start_idx in range(0, n_images, images_per_generator)]
     progress_bar = MpProgressBar(n_images)
     progress_bar.start()
 
