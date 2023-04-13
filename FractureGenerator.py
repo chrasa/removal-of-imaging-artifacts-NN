@@ -1,4 +1,5 @@
 import sys
+import random
 import numpy as np
 from scipy.stats import uniform
 from FractureSetup import FractureSetup
@@ -22,13 +23,17 @@ class FractureGenerator(FracturePlacer):
 
             while n_iterations < self.setup.max_iterations: 
                 n_iterations += 1
+                r = random.random()
 
-                if self._binomial_distribution():
-                    fracture_is_valid = self.add_random_single_fracture()
+                if r < self.setup.y_fracture_probability:
+                    fracture_is_valid = self.add_random_Y_fracture()
                     n_new_fractures = 1
-                else:
+                elif self.setup.y_fracture_probability <= r and r < self.setup.y_fracture_probability + self.setup.double_fracture_probability:
                     fracture_is_valid = self.add_random_double_fracture()
                     n_new_fractures = 2
+                else:
+                    fracture_is_valid = self.add_random_single_fracture()
+                    n_new_fractures = 1
 
                 if fracture_is_valid:
                     n_fractures += n_new_fractures

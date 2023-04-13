@@ -23,6 +23,10 @@ class FracturePlacer(FractureDrawer):
         self.double_fracture_start_point_angle_distribution = uniform(loc=0, scale=360)
         self.double_fracture_angle_distribution = norm(loc=0, scale=self.setup.double_fracture_std_dev_angle)
 
+        self.y_fracture_length_distribution = norm(loc=self.setup.y_fracture_mean_length, scale=self.setup.y_fracture_std_dev_length)
+        self.y_fracture_angle_distribution = norm(loc=self.setup.y_fracture_mean_angle, scale=self.setup.y_fracture_std_dev_angle)
+        self.y_fracture_arms_angle_distribution = norm(loc=self.setup.y_fracture_mean_arms_angle, scale=self.setup.y_fracture_std_dev_arms_angle)
+
         a_low = (0.3 - 0.45) / 0.05
         b_low = (0.6 - 0.45) / 0.05 
         low_velocity_modifier = truncnorm(a_low, b_low, loc=0.45, scale=0.05)
@@ -59,6 +63,17 @@ class FracturePlacer(FractureDrawer):
         fracture_velocity = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
         xs, ys = self._get_fracture_starting_position()
         return self.draw_fracture(xs, ys, fracture_length, fracture_angle, fracture_velocity)
+    
+
+    def add_random_Y_fracture(self):
+        lengths = [self.y_fracture_length_distribution.rvs().astype(int) for _ in range(3)]
+        angles = [self.y_fracture_angle_distribution.rvs(),
+                  self.y_fracture_arms_angle_distribution.rvs(),
+                  -self.y_fracture_arms_angle_distribution.rvs()]
+        velocity = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
+        xs, ys = self._get_fracture_starting_position()
+        return self.draw_Y_fracture(xs, ys, lengths, angles, velocity)
+    
     
     def _get_fracture_starting_position(self):
         for _ in range(self.setup.max_iterations):

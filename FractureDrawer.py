@@ -52,6 +52,30 @@ class FractureDrawer:
         for x, y in pixels:
             self.fracture_image[x,y] = velocity
         return True
+    
+    def draw_Y_fracture(self, xs, ys, lengths, angles, velocity):
+        polygon_pixels = []
+        first_line = True
+        for length, angle in zip(lengths, angles):
+            if first_line:
+                pixels = self._draw_line(xs, ys, length, angle)
+                if pixels is False:
+                    return False
+                x_end, y_end = pixels[-1]
+                first_line = False
+            else:
+                pixels = self._draw_line(x_end, y_end, length, angle)
+                if pixels is False:
+                    return False
+
+            
+            for pixel in pixels:
+                polygon_pixels.append(pixel)
+
+        self._create_buffer(polygon_pixels)
+        for x, y in polygon_pixels:
+            self._fracture_pixel(x, y, velocity)
+        return True
 
     def _draw_line(self, xs, ys, fracture_length, fracture_angle):
         if self._is_invalid_pixel(xs, ys):
