@@ -27,6 +27,11 @@ class FracturePlacer(FractureDrawer):
         self.y_fracture_angle_distribution = norm(loc=self.setup.y_fracture_mean_angle, scale=self.setup.y_fracture_std_dev_angle)
         self.y_fracture_arms_angle_distribution = norm(loc=self.setup.y_fracture_mean_arms_angle, scale=self.setup.y_fracture_std_dev_arms_angle)
 
+        self.polygon_n_lines_distribution = uniform(loc=self.setup.polygon_fracture_n_lines_min, scale=(self.setup.polygon_fracture_n_lines_max-self.setup.polygon_fracture_n_lines_min+1))
+        self.polygon_start_angle_distribution = norm(loc=self.setup.polygon_fracture_start_angle_mean, scale=self.setup.polygon_fracture_start_angle_std_dev)
+        self.polygon_next_angle_distribution = norm(loc=self.setup.polygon_fracture_next_angle_mean, scale=self.setup.polygon_fracture_next_angle_std_dev)
+        self.polygon_length_distribution = norm(loc=self.setup.polygon_fracture_mean_length, scale=self.setup.polygon_fracture_std_dev_length)
+
         a_low = (0.3 - 0.45) / 0.05
         b_low = (0.6 - 0.45) / 0.05 
         low_velocity_modifier = truncnorm(a_low, b_low, loc=0.45, scale=0.05)
@@ -73,6 +78,38 @@ class FracturePlacer(FractureDrawer):
         velocity = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
         xs, ys = self._get_fracture_starting_position()
         return self.draw_Y_fracture(xs, ys, lengths, angles, velocity)
+    
+
+    def add_random_ploygon_fracture(self):
+        n_lines = self.polygon_n_lines_distribution.rvs().astype(int)
+        xs, ys = self._get_fracture_starting_position()
+        start_angle = self.polygon_start_angle_distribution.rvs()
+        fracture_velocity = np.random.choice(self.modifier_distributions).rvs() * self.setup.background_velocity
+
+        polygon_pixels = []
+        for _ in range(n_lines):
+            pixels = self._draw_next_polygon_line(xs, ys, start_angle)
+            if pixels is False:
+                return False
+            xs, ys = pixels[-1]
+            for pixel in pixels:
+                polygon_pixels.append(pixel)
+        
+        self._create_buffer(polygon_pixels)
+        for x, y in polygon_pixels:
+            self._fracture_pixel(x, y, fracture_velocity)
+        return True
+    
+    def _draw_next_polygon_line(self, xs, ys, previous_angle):
+        n_iterations = 0
+        while n_iterations < self.setup.max_iterations:
+            n_iterations += 1
+            pixels = self._draw_line(xs, ys, self.polygon_length_distribution.rvs().astype(int), previous_angle + self.polygon_next_angle_distribution.rvs())
+            if pixels is False:
+                continue
+            else:
+                return pixels
+        raise Exception("Unable to place next polygon line")
     
     
     def _get_fracture_starting_position(self):

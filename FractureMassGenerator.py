@@ -29,7 +29,7 @@ class FractureMassGenerator(Process):
             img_idx += 1
             self.__increase_progress_bar()
 
-    @retry(tries=3)
+    @retry(tries=10)
     def _generate_fracture_image(self, idx):
         img, _ = self.fracture_generator.generate_fractures()
         np.save(f"{self.output_path}{ os.path.sep }im{idx:04}.npy", img)
@@ -107,12 +107,8 @@ def main():
     print(f"Images per generator: {images_per_generator}")
 
     fracture_setup = FractureSetup(
-        O_x=156,
-        O_y=25,
-        fractured_region_height=100,
-        fractured_region_width=200,
-        n_fractures_min=2,
-        n_fractures_max=4,
+        n_fractures_min=3,
+        n_fractures_max=6,
         max_iterations=200
     )
 

@@ -18,6 +18,7 @@ class FractureGenerator(FracturePlacer):
         n_fractures = 0
 
         while n_fractures < n_fractures_to_place:
+        # while n_fractures < 1:
             n_iterations = 0
             fracture_is_valid = False
 
@@ -31,6 +32,9 @@ class FractureGenerator(FracturePlacer):
                 elif self.setup.y_fracture_probability <= r and r < self.setup.y_fracture_probability + self.setup.double_fracture_probability:
                     fracture_is_valid = self.add_random_double_fracture()
                     n_new_fractures = 2
+                elif self.setup.y_fracture_probability + self.setup.double_fracture_probability <= r and r < self.setup.y_fracture_probability + self.setup.double_fracture_probability + self.setup.polygon_fracture_probability:
+                    fracture_is_valid = self.add_random_ploygon_fracture()
+                    n_new_fractures = 1
                 else:
                     fracture_is_valid = self.add_random_single_fracture()
                     n_new_fractures = 1
