@@ -13,13 +13,14 @@ from benchmark import ProgressBar
 progress = Value('i', 0)
 
 class FractureMassGenerator(Process):
-    def __init__(self, n, start_idx, fracture_setup: FractureSetup, plot_fractures=False, out_path="./fractures") -> None:
+    def __init__(self, n, start_idx, fracture_setup: FractureSetup, plot_fractures=False, out_path="./fractures", plot_only_imaging_region=False) -> None:
         super().__init__()
         self.n = n
         self.start_index = start_idx
         self.fracture_generator = FractureGenerator(fracture_setup)
         self.plot_fractures = plot_fractures
         self.output_path = out_path
+        self.plot_only_imaging_region = plot_only_imaging_region
 
     def run(self):
         img_idx = self.start_index
@@ -31,21 +32,27 @@ class FractureMassGenerator(Process):
     @retry(tries=3)
     def _generate_fracture_image(self, idx):
         img, _ = self.fracture_generator.generate_fractures()
-        np.save(f"{self.output_path}{ os.path.sep }im{idx}.npy", img)
+        np.save(f"{self.output_path}{ os.path.sep }im{idx:04}.npy", img)
         if self.plot_fractures:
-            self._plot_fracture(img, f"im{idx}")
+            self._plot_fracture(img, f"im{idx:04}")
 
     def _plot_fracture(self, fracture_img, img_title):
-        image = fracture_img.reshape(self.fracture_generator.setup.image_height, self.fracture_generator.setup.image_width)
-    
         fig, ax = plt.subplots()
-        ax.set_title(img_title)
+        if self.plot_only_imaging_region:
+            dpi = 80
+            image = fracture_img[self.fracture_generator.get_imaging_region_indices()]
+            image = image.reshape(self.fracture_generator.setup.fractured_region_width, self.fracture_generator.setup.fractured_region_height)
+        else:
+            dpi = 150
+            image = fracture_img.reshape(self.fracture_generator.setup.image_height, self.fracture_generator.setup.image_width)
+            rect = patches.Rectangle((self.fracture_generator.setup.O_x, self.fracture_generator.setup.O_y), self.fracture_generator.setup.fractured_region_width, self.fracture_generator.setup.fractured_region_height, linewidth=1, edgecolor='r', facecolor='none')
+            ax.add_patch(rect)
+        
         ax.imshow(image.T)
-        rect = patches.Rectangle((self.fracture_generator.setup.O_x, self.fracture_generator.setup.O_y), self.fracture_generator.setup.fractured_region_width, self.fracture_generator.setup.fractured_region_height, linewidth=1, edgecolor='r', facecolor='none')
-        ax.add_patch(rect)
+        ax.set_title(img_title)
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
-        plt.savefig(f'{self.output_path}{ os.path.sep }img{ os.path.sep }{img_title}.jpg', dpi=150)
+        plt.savefig(f'{self.output_path}{ os.path.sep }img{ os.path.sep }{img_title}.jpg', dpi=dpi)
         plt.close()
 
 
@@ -70,7 +77,8 @@ class MpProgressBar(Process):
             else:
                 old_progress = progress.value
                 self.progress_bar.print_progress(old_progress, self.n_images)
-        
+
+        self.progress_bar.print_progress(progress.value, self.n_images)
         self.progress_bar.end()
 
 
@@ -80,6 +88,7 @@ def main():
     n_processes = os.cpu_count()
     n_images = n_processes * 10
     plot_fractures = False
+    plot_only_imaging_region = False
 
     for i, arg in enumerate(sys.argv):
         if arg == '-n':
@@ -88,6 +97,8 @@ def main():
             n_processes = int(sys.argv[i+1])
         elif arg == '-plot_fractures':
             plot_fractures = True
+        elif arg == '-plot_only_imaging_region':
+            plot_only_imaging_region = True
 
     if (n_images%n_processes) != 0:
         raise Exception("Number of Images needs to be a multiple of the number of processes")
@@ -105,7 +116,7 @@ def main():
         max_iterations=200
     )
 
-    fracture_generators = [FractureMassGenerator(images_per_generator, start_idx, fracture_setup, plot_fractures) for start_idx in range(0, n_images, images_per_generator)]
+    fracture_generators = [FractureMassGenerator(images_per_generator, start_idx, fracture_setup, plot_fractures, "./fractures", plot_only_imaging_region) for start_idx in range(0, n_images, images_per_generator)]
     progress_bar = MpProgressBar(n_images)
     progress_bar.start()
 

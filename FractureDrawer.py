@@ -167,8 +167,8 @@ class FractureDrawer:
         return p + distribution.rvs()
 
     def get_imaging_region_indices(self):
-        im_y_indices = range(self.setup.O_y, self.setup.O_y+self.setup.fractured_region_width)
-        im_x_indices = range(self.setup.O_x, self.setup.O_x+self.setup.fractured_region_height)
-        indices = [y*self.setup.image_height + x for y in im_y_indices for x in im_x_indices] 
+        im_y_indices = range(self.setup.O_y, self.setup.O_y+self.setup.fractured_region_height)
+        im_x_indices = range(self.setup.O_x, self.setup.O_x+self.setup.fractured_region_width)
+        indices = [x*self.setup.image_height + y for x in im_x_indices for y in im_y_indices] 
 
         return indices
