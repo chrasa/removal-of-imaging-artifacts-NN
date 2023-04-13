@@ -6,6 +6,7 @@ from scipy.signal import convolve2d as conv2
 class FractureDrawer:
     def __init__(self, fracture_setup: FractureSetup) -> None:
         self.setup = fracture_setup
+        self.fracture_image = np.full((self.setup.image_height, self.setup.image_width), self.setup.background_velocity)
 
     def draw_fracture(self, xs, ys, length, angle, velocity):
         pixels = self._draw_line(xs, ys, length, angle)

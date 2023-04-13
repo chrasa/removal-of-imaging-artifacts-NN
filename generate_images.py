@@ -24,8 +24,8 @@ def main(n_images=3, precision='float64', data_folder=f".{path.sep}data{path.sep
     rom_exec_setup = ExecutionSetup(gpu=False, precision=precision, data_folder=data_folder)
 
     fracture_setup = FractureSetup(
-        O_x=25,
-        O_y=180,
+        O_x=180,
+        O_y=25,
         fractured_region_height=140,
         fractured_region_width=155,
         n_fractures=3

@@ -8,11 +8,10 @@ from FractureDrawer import FractureDrawer
 class FracturePlacer(FractureDrawer):
     def __init__(self, fracture_setup: FractureSetup = FractureSetup() ):
         super(FracturePlacer, self).__init__(fracture_setup=fracture_setup)
+        self.__init_distributions()
 
-        self.setup = fracture_setup
-        self.init_distributions()
 
-    def init_distributions(self):
+    def __init_distributions(self):
         mean_length = (self.setup.max_length + self.setup.max_length) / 2
         a_length = (self.setup.min_length - mean_length) / self.setup.std_dev_length
         b_length = (self.setup.max_length - mean_length) / self.setup.std_dev_length
@@ -20,7 +19,6 @@ class FracturePlacer(FractureDrawer):
         self.length_distribution = truncnorm(a=a_length, b=b_length, loc=mean_length, scale=self.setup.std_dev_length)
         #self.length_distribution = uniform(loc=self.setup.min_length, scale=self.setup.max_length)
         self.angle_distribution = norm(loc=0, scale=self.setup.std_dev_angle)
-        self.n_fractures_distribution = uniform(loc=self.setup.n_fractures_min, scale=(self.setup.n_fractures_max-self.setup.n_fractures_min + 1))
         self.double_fracture_radius_distribution = uniform(loc=self.setup.double_fracture_radius_min, scale=(self.setup.double_fracture_radius_max-self.setup.double_fracture_radius_min+1))
         self.double_fracture_start_point_angle_distribution = uniform(loc=0, scale=360)
         self.double_fracture_angle_distribution = norm(loc=0, scale=self.setup.double_fracture_std_dev_angle)
@@ -34,45 +32,6 @@ class FracturePlacer(FractureDrawer):
         high_velocity_modifier = truncnorm(a_high, b_high, loc=2.25, scale=0.25)
         self.modifier_distributions = [low_velocity_modifier, high_velocity_modifier]
 
-    def generate_fractures(self):
-        self.fracture_image = np.full((self.setup.image_height, self.setup.image_width), self.setup.background_velocity)
-        n_fractures_to_place = self.n_fractures_distribution.rvs().astype(int)
-        n_fractures = 0
-
-        while n_fractures < n_fractures_to_place:
-            n_iterations = 0
-            fracture_is_valid = False
-
-            while n_iterations < self.setup.max_iterations: 
-                n_iterations += 1
-
-                if self._binomial_distribution():
-                    fracture_is_valid = self.add_random_single_fracture()
-                    n_new_fractures = 1
-                else:
-                    fracture_is_valid = self.add_random_double_fracture()
-                    n_new_fractures = 2
-
-                if fracture_is_valid:
-                    n_fractures += n_new_fractures
-                    break
-                else:
-                    continue             
-
-            if not fracture_is_valid:
-                raise RuntimeError("Unable to fit fracture in image")
-            
-        # self.draw_point_target(256, 100, 10, 500)
-
-        # Produce the resulting image
-        self.fracture_image[self.fracture_image == -1] = self.setup.background_velocity # Remove the buffer
-        # fracture_image = self._blur_fracture_edges(fracture_image)
-        # fracture_image = self._add_noise(fracture_image, 1, 0.1)
-        # fracture_image = tf.convert_to_tensor(fracture_image)
-        # resulting_image = tf.math.add(image, fracture_image)
-        self.fracture_image = self.fracture_image.reshape(self.setup.image_width*self.setup.image_height)
-
-        return self.fracture_image, self.fracture_image[self.get_imaging_region_indices()]
     
     def add_random_double_fracture(self):
         fracture_length1 = self.length_distribution.rvs().astype(int)
@@ -116,50 +75,3 @@ class FracturePlacer(FractureDrawer):
     def _binomial_distribution(self):
         return random.choice([0,1])
 
-
-def normalize_image(image: np.array):
-    normalized = image.astype(np.float32)
-    # normalized = normalized / tf.reduce_max(tf.abs(normalized))
-    normalized = normalized / np.max(normalized)
-
-    return normalized
-
-def print_progress(progress, max, progress_bar_length=40):
-        title = f"\rImages generated: {progress:5}/{max:5}: "
-        success_rate = f" {(progress/max)*100:3.2f}%"
-        number_of_progress_indicators = int(progress * progress_bar_length // (max))
-
-        sys.stdout.write(title + "[" + number_of_progress_indicators*"#" + (progress_bar_length - number_of_progress_indicators)*"-" + "]" + success_rate)
-
-
-def main():
-    n_images = 10
-
-    for i, arg in enumerate(sys.argv):
-        if arg == '-n':
-            n_images = int(sys.argv[i+1])
-
-    fracture_setup = FractureSetup(
-        O_x=156,
-        O_y=25,
-        fractured_region_height=100,
-        fractured_region_width=200,
-        n_fractures_min=2,
-        n_fractures_max=4,
-        max_iterations=200
-    )
-
-    generator = FracturePlacer(fracture_setup)
-
-    for i in range(n_images):
-        print_progress(i+1, n_images)
-        image, _ = generator.generate_fractures()
-        np.save(f"./fractures/im{i}.npy", image)
-    
-    sys.stdout.write("\n")
-
-    # circle = generator.generate_point_target(y=100)
-    # np.save(f"./fractures/circle.npy", circle)
-
-if __name__ == "__main__":
-    main()
