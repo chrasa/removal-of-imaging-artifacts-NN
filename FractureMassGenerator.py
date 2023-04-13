@@ -13,12 +13,13 @@ from benchmark import ProgressBar
 progress = Value('i', 0)
 
 class FractureMassGenerator(Process):
-    def __init__(self, n, start_idx, fracture_setup: FractureSetup, plot_fractures=False) -> None:
+    def __init__(self, n, start_idx, fracture_setup: FractureSetup, plot_fractures=False, out_path="./fractures") -> None:
         super().__init__()
         self.n = n
         self.start_index = start_idx
         self.fracture_generator = FractureGenerator(fracture_setup)
         self.plot_fractures = plot_fractures
+        self.output_path = out_path
 
     def run(self):
         img_idx = self.start_index
@@ -30,7 +31,7 @@ class FractureMassGenerator(Process):
     @retry(tries=3)
     def _generate_fracture_image(self, idx):
         img, _ = self.fracture_generator.generate_fractures()
-        np.save(f"fractures/im{idx}.npy", img)
+        np.save(f"{self.output_path}{ os.path.sep }im{idx}.npy", img)
         if self.plot_fractures:
             self._plot_fracture(img, f"im{idx}")
 
@@ -44,7 +45,7 @@ class FractureMassGenerator(Process):
         ax.add_patch(rect)
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
-        plt.savefig(f'fractures{ os.path.sep }img{ os.path.sep }{img_title}.jpg', dpi=150)
+        plt.savefig(f'{self.output_path}{ os.path.sep }img{ os.path.sep }{img_title}.jpg', dpi=150)
         plt.close()
 
 
