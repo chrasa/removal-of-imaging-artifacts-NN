@@ -17,7 +17,7 @@ nvidia-smi
 
 echo "Generate images..."
 
-python3 generate_images.py -n 2
+python3 generate_images.py -n 2 -gpu
 
 echo " "
 echo "Finished calculations"
