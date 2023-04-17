@@ -1,5 +1,5 @@
 import numpy as np
-from SimulationSetup import SimulationSetup
+from setup import SimulationSetup
 from os import path
 import sys
 
@@ -7,11 +7,11 @@ from matplotlib import pyplot as plt
 
 setup = SimulationSetup()
 
-U_rtm = np.memmap("rtm_data/U_RT.npy", np.float64, 'r', shape=(2*setup.N_t, setup.N*setup.N, setup.N_s))
-U_0 = np.memmap("rtm_data/U_0.npy", np.float64, 'r', shape=(2*setup.N_t,setup.N*setup.N, setup.N_s))
-U = np.memmap("rtm_data/U.npy", np.float64, 'r', shape=(2*setup.N_t,setup.N*setup.N, setup.N_s))
+U_rtm = np.memmap("rtm_data/U_RT.npy", np.float64, 'r', shape=(2*setup.N_t, setup.N_x*setup.N_y, setup.N_s))
+U_0 = np.memmap("rtm_data/U_0.npy", np.float64, 'r', shape=(2*setup.N_t,setup.N_x*setup.N_y, setup.N_s))
+U = np.memmap("rtm_data/U.npy", np.float64, 'r', shape=(2*setup.N_t,setup.N_x*setup.N_y, setup.N_s))
 
-I = np.zeros(setup.N*setup.N, dtype=np.float64)
+I = np.zeros(setup.N_x*setup.N_y, dtype=np.float64)
 
 def plot_rtm(U_0_frame, U_RTM_frame, fracture, I, U_frame, U_reverse_frame):
     fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(10, 12), dpi=150)

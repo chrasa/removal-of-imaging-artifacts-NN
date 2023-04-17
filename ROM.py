@@ -1,6 +1,6 @@
 from cholesky import mblockchol
 from os.path import exists, sep
-from SimulationSetup import SimulationSetup
+from setup import SimulationSetup
 from benchmark import timeit
 from cpu_gpu_abstraction import CPU_GPU_Abstractor, ExecutionSetup
 

@@ -2,7 +2,7 @@ import sys
 import numpy
 import scipy
 from os import path
-from SimulationSetup import SimulationSetup
+from setup import SimulationSetup
 from benchmark import timeit
 
 from cpu_gpu_abstraction import CPU_GPU_Abstractor, ExecutionSetup
@@ -16,7 +16,7 @@ class RTM(CPU_GPU_Abstractor):
         super(RTM, self).__init__(exec_setup=exec_setup)
 
         self.setup = setup
-        self.background_velocity = self.xp.full(self.setup.N**2, setup.background_velocity_value, dtype=self.exec_setup.precision)
+        self.background_velocity = self.xp.full(self.setup.N_x*self.setup.N_y, setup.background_velocity_value, dtype=self.exec_setup.precision)
         self.nts = 20
         self.delta_t = setup.tau/self.nts
         self.imaging_region_indices = self.get_imaging_region_indices()
@@ -64,10 +64,10 @@ class RTM(CPU_GPU_Abstractor):
 
     @timeit 
     def get_A(self):
-        c = self.xp.full(self.setup.N**2, self.setup.background_velocity_value, dtype=self.exec_setup.precision)
-        I_k = self.scipy.sparse.identity(self.setup.N)
+        c = self.xp.full(self.setup.N_x*self.setup.N_y, self.setup.background_velocity_value, dtype=self.exec_setup.precision)
+        I_k = self.scipy.sparse.identity(self.setup.N_x)
 
-        D_k = (1/self.setup.delta_x**2)*self.scipy.sparse.diags([1,-2,1],[-1,0,1], shape=(self.setup.N,self.setup.N), dtype=self.exec_setup.precision)
+        D_k = (1/self.setup.delta_x**2)*self.scipy.sparse.diags([1,-2,1],[-1,0,1], shape=(self.setup.N_x,self.setup.N_y), dtype=self.exec_setup.precision)
         D_k = self.scipy.sparse.csr_matrix(D_k, dtype=self.exec_setup.precision)
         D_k[0, 0] = -1 * (1/self.setup.delta_x**2)
 
@@ -89,7 +89,7 @@ class RTM(CPU_GPU_Abstractor):
         B_delta = self.generate_sources()
         A = self.get_A()
 
-        factor = 2*self.scipy.sparse.identity(self.setup.N**2) - self.delta_t**2 * A
+        factor = 2*self.scipy.sparse.identity(self.setup.N_x*self.setup.N_y) - self.delta_t**2 * A
 
         for time_idx in range(2*self.setup.N_t * self.nts):
             self._print_progress_bar(time_idx+1, 2*self.setup.N_t*self.nts, title="Reverse time calculation")

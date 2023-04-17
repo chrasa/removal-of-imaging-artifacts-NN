@@ -5,7 +5,7 @@ import numpy
 
 from benchmark import timeit
 from cpu_gpu_abstraction import CPU_GPU_Abstractor, ExecutionSetup
-from SimulationSetup import SimulationSetup
+from setup import SimulationSetup
 
 from typing import TypeVar
 
@@ -22,7 +22,7 @@ class WaveSolver(CPU_GPU_Abstractor):
         self.setup = setup
 
         self.imaging_region_indices = self.get_imaging_region_indices()
-        self.background_velocity = self.xp.full(self.setup.N**2, setup.background_velocity_value, dtype=self.exec_setup.precision)
+        self.background_velocity = self.xp.full(self.setup.N_x*self.setup.N_y, setup.background_velocity_value, dtype=self.exec_setup.precision)
         self.delta_t = setup.tau/20
 
     def import_sources(self):
@@ -42,10 +42,10 @@ class WaveSolver(CPU_GPU_Abstractor):
     @timeit 
     def init_simulation(self, c):
         # I_k is the identity matrix
-        I_k = self.scipy.sparse.identity(self.setup.N)
+        I_k = self.scipy.sparse.identity(self.setup.N_x)
 
         # D_k is the N_x × N_y tridiagonal matrix which represents the boundary conditions. The D_k matrix is presented in Equation 6
-        D_k = (1/self.setup.delta_x**2)*self.scipy.sparse.diags([1,-2,1],[-1,0,1], shape=(self.setup.N,self.setup.N), dtype=self.exec_setup.precision)
+        D_k = (1/self.setup.delta_x**2)*self.scipy.sparse.diags([1,-2,1],[-1,0,1], shape=(self.setup.N_x,self.setup.N_y), dtype=self.exec_setup.precision)
         D_k = self.scipy.sparse.csr_matrix(D_k)
         D_k[0, 0] = -1 * (1/self.setup.delta_x**2)
 

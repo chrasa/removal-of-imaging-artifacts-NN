@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 @dataclass
 class ImageSetup:
+    """Class for defining image properties"""
     N_x: int = 512
     N_y: int = 512
     N_x_im: int = 155
@@ -12,6 +13,7 @@ class ImageSetup:
 
 @dataclass
 class FractureSetup(ImageSetup):
+    """Class for defining the properties for generating the fracture images"""
     n_fractures_min: int = 3
     n_fractures_max: int = 7
     fracture_width: int = 4
@@ -49,7 +51,6 @@ class FractureSetup(ImageSetup):
 @dataclass
 class SimulationSetup(ImageSetup):
     """Class for defining the simulation properties"""
-    N: int = 512
     N_s: int = 50
     delta_x: float = 0.0063
     tau: float = 3.0303*10**(-5)

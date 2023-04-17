@@ -2,7 +2,7 @@ import sys
 from RTM import RTM
 from ROM import ROM
 from WaveSolver import WaveSolver
-from SimulationSetup import SimulationSetup
+from setup import SimulationSetup
 from cpu_gpu_abstraction import ExecutionSetup
 from os import path
 import numpy as np
