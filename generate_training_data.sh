@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH -M snowy
 #SBATCH -A snic2022-22-1060
-#SBATCH -p node -N 1
+#SBATCH -p core -N 1
 #SBATCH -t 1:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --gpus-per-node=1
