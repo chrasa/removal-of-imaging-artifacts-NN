@@ -14,6 +14,10 @@ The goal of this project is to train a neural network to remove some of these im
 ## RTM, ROM and Wave Solver
 This repository contains a implementation of RTM and ROM in Python. Furthermore a Wave Solver for simulating the behavior of the waves in the fractured medium is provided. Both imaging algorithms and the Wave solver can be accelerated by using Nvidia GPUs. The project utilizes [CuPy](https://cupy.dev/) for GPU-acceleration. The code was primarily written for execution on the [UPPMAX](https://www.uppmax.uu.se/) cluster of Uppsala University. 
 
+<p align="center">
+  <img src="./img/rtm_rom_fracture.png">
+</p>
+
 ## Generating Fractures
 In order to supply input to RTM and ROM fracture images need to be produced. Theses images are generated with the fracture generator. The generator is capable of producing five different types of fractures, which get placed arbitrarily in the image:
 - **Single Fractures:** simple straigt line
