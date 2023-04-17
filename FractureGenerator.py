@@ -2,7 +2,7 @@ import sys
 import random
 import numpy as np
 from scipy.stats import uniform
-from FractureSetup import FractureSetup
+from setup import FractureSetup
 from FracturePlacer import FracturePlacer
 from benchmark import ProgressBar
 
@@ -56,12 +56,12 @@ class FractureGenerator(FracturePlacer):
         # fracture_image = self._add_noise(fracture_image, 1, 0.1)
         # fracture_image = tf.convert_to_tensor(fracture_image)
         # resulting_image = tf.math.add(image, fracture_image)
-        self.fracture_image = self.fracture_image.reshape(self.setup.image_width*self.setup.image_height)
+        self.fracture_image = self.fracture_image.reshape(self.setup.N_x*self.setup.N_y)
 
         return self.fracture_image, self.fracture_image[self.get_imaging_region_indices()]
     
     def __reset_fracture_image(self):
-        self.fracture_image = np.full((self.setup.image_height, self.setup.image_width), self.setup.background_velocity)
+        self.fracture_image = np.full((self.setup.N_y, self.setup.N_x), self.setup.background_velocity)
 
 
 def main():
@@ -74,8 +74,8 @@ def main():
     fracture_setup = FractureSetup(
         O_x=156,
         O_y=25,
-        fractured_region_height=100,
-        fractured_region_width=200,
+        N_y_im=100,
+        N_x_im=200,
         n_fractures_min=2,
         n_fractures_max=4,
         max_iterations=200

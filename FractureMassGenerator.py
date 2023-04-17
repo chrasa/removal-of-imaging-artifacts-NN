@@ -5,7 +5,7 @@ import numpy as np
 from multiprocessing import Process, Value
 from matplotlib import pyplot as plt
 import matplotlib.patches as patches
-from FractureSetup import FractureSetup
+from setup import FractureSetup
 from FractureGenerator import FractureGenerator
 from retry import retry
 from benchmark import ProgressBar
@@ -41,11 +41,11 @@ class FractureMassGenerator(Process):
         if self.plot_only_imaging_region:
             dpi = 80
             image = fracture_img[self.fracture_generator.get_imaging_region_indices()]
-            image = image.reshape(self.fracture_generator.setup.fractured_region_width, self.fracture_generator.setup.fractured_region_height)
+            image = image.reshape(self.fracture_generator.setup.N_x_im, self.fracture_generator.setup.N_y_im)
         else:
             dpi = 150
-            image = fracture_img.reshape(self.fracture_generator.setup.image_height, self.fracture_generator.setup.image_width)
-            rect = patches.Rectangle((self.fracture_generator.setup.O_x, self.fracture_generator.setup.O_y), self.fracture_generator.setup.fractured_region_width, self.fracture_generator.setup.fractured_region_height, linewidth=1, edgecolor='r', facecolor='none')
+            image = fracture_img.reshape(self.fracture_generator.setup.N_y, self.fracture_generator.setup.N_x)
+            rect = patches.Rectangle((self.fracture_generator.setup.O_x, self.fracture_generator.setup.O_y), self.fracture_generator.setup.N_x_im, self.fracture_generator.setup.N_y_im, linewidth=1, edgecolor='r', facecolor='none')
             ax.add_patch(rect)
         
         ax.imshow(image.T)
@@ -107,8 +107,12 @@ def main():
     print(f"Images per generator: {images_per_generator}")
 
     fracture_setup = FractureSetup(
+        O_x=180,
+        O_y=25,
+        N_y_im=140,
+        N_x_im=155,
         n_fractures_min=3,
-        n_fractures_max=6,
+        n_fractures_max=5,
         max_iterations=200
     )
 

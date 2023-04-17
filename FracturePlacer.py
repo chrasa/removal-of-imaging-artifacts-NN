@@ -2,7 +2,7 @@ import sys
 import random
 import numpy as np
 from scipy.stats import truncnorm, norm, uniform
-from FractureSetup import FractureSetup
+from setup import FractureSetup
 from FractureDrawer import FractureDrawer
 
 class FracturePlacer(FractureDrawer):
@@ -120,8 +120,8 @@ class FracturePlacer(FractureDrawer):
         raise RuntimeError("Unable to fit fracture in image")
     
     def _sample_coordinates(self):
-        xs = int(np.random.uniform(self.setup.O_x, self.setup.O_x+self.setup.fractured_region_width))
-        ys = int(np.random.uniform(self.setup.O_y, self.setup.O_y+self.setup.fractured_region_height))
+        xs = int(np.random.uniform(self.setup.O_x, self.setup.O_x+self.setup.N_x_im))
+        ys = int(np.random.uniform(self.setup.O_y, self.setup.O_y+self.setup.N_y_im))
         return xs, ys
     
     def _binomial_distribution(self):

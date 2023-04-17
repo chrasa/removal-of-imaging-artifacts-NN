@@ -1,13 +1,17 @@
 from dataclasses import dataclass
 
 @dataclass
-class FractureSetup:
-    image_width: int = 512
-    image_height: int = 512
-    fractured_region_width: int = 350
-    fractured_region_height: int = 175
-    O_x: int = 81
+class ImageSetup:
+    N_x: int = 512
+    N_y: int = 512
+    N_x_im: int = 155
+    N_y_im: int = 140
+    O_x: int = 180
     O_y: int = 25
+
+
+@dataclass
+class FractureSetup(ImageSetup):
     n_fractures_min: int = 3
     n_fractures_max: int = 7
     fracture_width: int = 4
@@ -40,3 +44,15 @@ class FractureSetup:
     double_fracture_probability: float = 0.2
     y_fracture_probability: float = 0.15
     polygon_fracture_probability: float = 0.4
+
+
+@dataclass
+class SimulationSetup(ImageSetup):
+    """Class for defining the simulation properties"""
+    N: int = 512
+    N_s: int = 50
+    delta_x: float = 0.0063
+    tau: float = 3.0303*10**(-5)
+    N_t: int = 70
+    background_velocity_value: float = 1000
+    Bsrc_file: str = "Bsrc_T.txt"

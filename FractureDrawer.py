@@ -1,12 +1,12 @@
 import numpy as np
-from FractureSetup import FractureSetup
+from setup import FractureSetup
 from scipy.signal import convolve2d as conv2
 
 
 class FractureDrawer:
     def __init__(self, fracture_setup: FractureSetup) -> None:
         self.setup = fracture_setup
-        self.fracture_image = np.full((self.setup.image_height, self.setup.image_width), self.setup.background_velocity)
+        self.fracture_image = np.full((self.setup.N_y, self.setup.N_x), self.setup.background_velocity)
 
     def draw_fracture(self, xs, ys, length, angle, velocity):
         pixels = self._draw_line(xs, ys, length, angle)
@@ -107,7 +107,7 @@ class FractureDrawer:
         pixels = []
         pixels.append((x, y))
 
-        xx, yy = np.mgrid[:self.setup.image_width, :self.setup.image_height]
+        xx, yy = np.mgrid[:self.setup.N_x, :self.setup.N_y]
         circle = np.sqrt((xx - x) ** 2 + (yy - y) ** 2)
 
         circle = np.where((circle < radius))
@@ -144,9 +144,9 @@ class FractureDrawer:
 
     def _out_of_bounds(self, x, y):
         return x < self.setup.O_x or \
-               x >= self.setup.O_x + self.setup.fractured_region_width or \
+               x >= self.setup.O_x + self.setup.N_x_im or \
                y < self.setup.O_y or \
-               y >= self.setup.O_y + self.setup.fractured_region_height
+               y >= self.setup.O_y + self.setup.N_y_im
 
     def _is_invalid_pixel(self, x, y):
         if self._out_of_bounds(x, y):
@@ -191,8 +191,8 @@ class FractureDrawer:
         return p + distribution.rvs()
 
     def get_imaging_region_indices(self):
-        im_y_indices = range(self.setup.O_y, self.setup.O_y+self.setup.fractured_region_height)
-        im_x_indices = range(self.setup.O_x, self.setup.O_x+self.setup.fractured_region_width)
-        indices = [x*self.setup.image_height + y for x in im_x_indices for y in im_y_indices] 
+        im_y_indices = range(self.setup.O_y, self.setup.O_y+self.setup.N_y_im)
+        im_x_indices = range(self.setup.O_x, self.setup.O_x+self.setup.N_x_im)
+        indices = [x*self.setup.N_y + y for x in im_x_indices for y in im_y_indices] 
 
         return indices
