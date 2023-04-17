@@ -35,7 +35,7 @@ class WaveSolver(CPU_GPU_Abstractor):
     def get_imaging_region_indices(self):
         im_y_indices = range(self.setup.O_y, self.setup.O_y+self.setup.N_y_im)
         im_x_indices = range(self.setup.O_x, self.setup.O_x+self.setup.N_x_im)
-        indices = [y*self.setup.N_x + x for y in im_y_indices for x in im_x_indices] 
+        indices = [x*self.setup.N_x + y for x in im_x_indices for y in im_y_indices] 
 
         return indices
 

@@ -95,7 +95,7 @@ class ROM(CPU_GPU_Abstractor):
         return I
 
     def _get_image_derivative(self, I):
-        I = I.reshape((self.setup.N_y_im, self.setup.N_x_im))
+        I = I.reshape((self.setup.N_x_im, self.setup.N_y_im))
         dx = -1 * self.xp.array([[-1, 0, 1]])
         I_x = self.scipy.ndimage.convolve(I, dx)
         I_x = I_x.reshape((-1, 1))
