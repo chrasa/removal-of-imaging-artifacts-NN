@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from os import path
-from SimulationSetup import SimulationSetup
+from setup import SimulationSetup
 
 def get_imaging_region_indices(setup: SimulationSetup):
     im_y_indices = range(setup.O_y, setup.O_y+setup.N_y_im)

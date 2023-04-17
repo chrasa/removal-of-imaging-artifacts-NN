@@ -1,8 +1,8 @@
 import sys
+from os import path
 import numpy as np
 import matplotlib.pyplot as plt
-from os import path
-from SimulationSetup import SimulationSetup
+from setup import SimulationSetup
 
 # Convert frames to images with: ffmpeg -framerate 12 -pattern_type glob -i '*.jpg'   -c:v libx264 -pix_fmt yuv420p out.mp4
 
