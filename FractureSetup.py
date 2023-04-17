@@ -8,8 +8,8 @@ class FractureSetup:
     fractured_region_height: int = 175
     O_x: int = 81
     O_y: int = 25
-    n_fractures_min: int = 2
-    n_fractures_max: int = 6
+    n_fractures_min: int = 3
+    n_fractures_max: int = 7
     fracture_width: int = 4
     buffer_size: int = 40
     max_length: float = 50.0 
@@ -18,12 +18,12 @@ class FractureSetup:
     std_dev_angle: float = 30.0
     mean_noise: float = 1.0
     std_dev_noise: float = 0.2
-    max_iterations: int = 15
+    max_iterations: int = 200
     background_velocity: float = 1000.0
-    double_fracture_radius_min: int = 5
-    double_fracture_radius_max: int = 20
+    double_fracture_radius_min: int = 20
+    double_fracture_radius_max: int = 30
     double_fracture_std_dev_angle: float = 10
-    y_fracture_mean_length: int = 15
+    y_fracture_mean_length: int = 25
     y_fracture_std_dev_length: float = 5.0
     y_fracture_mean_angle: float = 0.0
     y_fracture_std_dev_angle: float = 20.0
