@@ -11,12 +11,7 @@ from benchmark import timeit
 
 @timeit
 def main(n_images=3, precision='float64', data_folder=f".{path.sep}data{path.sep}", use_gpu=False):
-    sim_setup = SimulationSetup(
-        N_t=40,
-        N_x_im=155,
-        N_y_im=140,
-        O_x=180,
-        O_y=25)
+    sim_setup = SimulationSetup()
     
     ws_exec_setup = ExecutionSetup(gpu=use_gpu, precision=precision, data_folder=data_folder)
     rtm_exec_setup = ExecutionSetup(gpu=use_gpu, precision=precision, data_folder=data_folder)
