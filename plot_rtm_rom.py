@@ -71,11 +71,11 @@ def plot_rtm_image_from_single_file(data_path, image_idx, setup: SimulationSetup
     plt.show()
 
 if __name__ == "__main__":
-    i = 0
+    idx = 0
 
     for i, arg in enumerate(sys.argv):
         if arg == '-n':
-            i = int(sys.argv[i+1])
+            idx = int(sys.argv[i+1])
 
     I_rom_path = "./data/I_ROM.npy"
     I_rtm_path = "./data/I_RTM.npy"
@@ -88,4 +88,4 @@ if __name__ == "__main__":
     )
 
     # plot_rtm_image(I_rom_path, I_rtm_path, fracture_path, setup)
-    plot_rtm_image_from_single_file("./data/training_data.npy", i, setup)
+    plot_rtm_image_from_single_file("./data/training_data.npy", idx, setup)
