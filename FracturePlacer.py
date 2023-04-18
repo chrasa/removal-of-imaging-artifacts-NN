@@ -20,7 +20,7 @@ class FracturePlacer(FractureDrawer):
         #self.length_distribution = uniform(loc=self.setup.min_length, scale=self.setup.max_length)
         self.angle_distribution = norm(loc=0, scale=self.setup.std_dev_angle)
         self.double_fracture_radius_distribution = uniform(loc=self.setup.double_fracture_radius_min, scale=(self.setup.double_fracture_radius_max-self.setup.double_fracture_radius_min+1))
-        self.double_fracture_start_point_angle_distribution = uniform(loc=0, scale=360)
+        # self.double_fracture_start_point_angle_distribution = uniform(loc=0, scale=360)
         self.double_fracture_angle_distribution = norm(loc=0, scale=self.setup.double_fracture_std_dev_angle)
 
         self.y_fracture_length_distribution = norm(loc=self.setup.y_fracture_mean_length, scale=self.setup.y_fracture_std_dev_length)
@@ -56,7 +56,12 @@ class FracturePlacer(FractureDrawer):
         xs1, ys1 = self._get_fracture_starting_position()
 
         s2_radius = self.double_fracture_radius_distribution.rvs()
-        s2_angle = self.double_fracture_start_point_angle_distribution.rvs()
+        s2_angle_distribution = uniform(loc=self.setup.double_fracture_start_point_angle_offset, scale=self.setup.double_fracture_start_point_angle_range)
+        s2_angle = s2_angle_distribution.rvs()
+        if self._binomial_distribution():
+            s2_angle = fracture_angle1 + s2_angle
+        else:
+            s2_angle = fracture_angle1 - s2_angle
         xs2 = int( xs1 + np.cos(np.deg2rad(s2_angle)) * s2_radius )
         ys2 = int( ys1 + np.sin(np.deg2rad(s2_angle)) * s2_radius )
         return self.draw_two_fractures(xs1, ys1, fracture_length1, fracture_angle1, fracture_velocity1, xs2, ys2, fracture_length2, fracture_angle2, fracture_velocity2)
