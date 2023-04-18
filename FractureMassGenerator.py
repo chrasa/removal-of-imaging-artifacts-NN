@@ -106,15 +106,7 @@ def main():
     images_per_generator = int(n_images/n_processes)
     print(f"Images per generator: {images_per_generator}")
 
-    fracture_setup = FractureSetup(
-        O_x=180,
-        O_y=25,
-        N_y_im=140,
-        N_x_im=155,
-        n_fractures_min=3,
-        n_fractures_max=5,
-        max_iterations=200
-    )
+    fracture_setup = FractureSetup()
 
     fracture_generators = [FractureMassGenerator(images_per_generator, start_idx, fracture_setup, plot_fractures, "./fractures", plot_only_imaging_region) for start_idx in range(0, n_images, images_per_generator)]
     progress_bar = MpProgressBar(n_images)

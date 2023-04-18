@@ -37,15 +37,15 @@ class FractureSetup(ImageSetup):
     y_fracture_std_dev_angle: float = 20.0
     y_fracture_mean_arms_angle: float = 45.0
     y_fracture_std_dev_arms_angle: float = 10.0
-    polygon_fracture_n_lines_min: int = 3
-    polygon_fracture_n_lines_max: int = 5
+    polygon_fracture_n_lines_min: int = 4
+    polygon_fracture_n_lines_max: int = 6
     polygon_fracture_start_angle_mean: float = 0.0
     polygon_fracture_start_angle_std_dev: float = 10.0
     polygon_fracture_next_angle_mean: float = 0
     polygon_fracture_next_angle_std_dev: float = 10.0
-    polygon_fracture_mean_length: float = 10.0
+    polygon_fracture_mean_length: float = 12.0
     polygon_fracture_std_dev_length: float = 1.5
-    double_fracture_probability: float = 0.2
+    double_fracture_probability: float = 0.25
     y_fracture_probability: float = 0.15
     polygon_fracture_probability: float = 0.3
 
