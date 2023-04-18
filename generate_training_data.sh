@@ -2,7 +2,7 @@
 #SBATCH -M snowy
 #SBATCH -A snic2022-22-1060
 #SBATCH -p core -N 1
-#SBATCH -t 1:00:00
+#SBATCH -t 12:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --gpus-per-node=1
 #SBATCH -J generate_images_test
@@ -17,7 +17,7 @@ nvidia-smi
 
 echo "Generate images..."
 
-python3 generate_images.py -n 2 -gpu
+python3 generate_images.py -n 100 -gpu
 
 echo " "
 echo "Finished calculations"
