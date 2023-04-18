@@ -1,7 +1,7 @@
 import sys
-from RTM import RTM
-from ROM import ROM
-from WaveSolver import WaveSolver
+from rtm import RTM
+from rom import ROM
+from wave_solver import WaveSolver
 from setup import SimulationSetup
 from cpu_gpu_abstraction import ExecutionSetup
 from os import path
