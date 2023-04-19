@@ -40,22 +40,25 @@ class RtmVisualizer(ProgressBar):
         I = I.reshape(self.setup.N_x_im, self.setup.N_y_im)
         
         ax[0,0].set_title("U_0")
-        ax[0,0].imshow(U_0_frame)
+        ax[0,0].imshow(U_0_frame.T)
 
         ax[0,1].set_title("U_RT")
-        ax[0,1].imshow(U_RT_frame)
+        ax[0,1].imshow(U_RT_frame.T)
 
         ax[1,0].set_title("I")
-        ax[1,0].imshow(I)
+        ax[1,0].imshow(I.T)
 
         ax[1,1].set_title("Fracture")
-        ax[1,1].imshow(self.fracture)
+        ax[1,1].imshow(self.fracture.T)
 
         ax[2,0].set_title("U forward")
-        ax[2,0].imshow(U_forward_frame)
+        ax[2,0].imshow(U_forward_frame.T)
 
         ax[2,1].set_title("U backward")
-        ax[2,1].imshow(U_backward_frame)
+        ax[2,1].imshow(U_backward_frame.T)
+
+        for axis in ax.flatten():
+            axis.grid(color='black', linestyle='--', linewidth=0.5)
 
         fig.savefig(f'rtm_visualization{path.sep}frame_{tidx:03d}.jpg')
         # plt.show()
