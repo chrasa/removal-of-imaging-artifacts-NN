@@ -48,7 +48,7 @@ class FractureGenerator(FracturePlacer):
             if not fracture_is_valid:
                 raise RuntimeError("Unable to fit fracture in image")
             
-        # self.draw_point_target(256, 100, 10, 500)
+        # self.draw_point_target(256, 100, 10, 200)
 
         # Produce the resulting image
         self.fracture_image[self.fracture_image == -1] = self.setup.background_velocity # Remove the buffer
@@ -71,15 +71,7 @@ def main():
         if arg == '-n':
             n_images = int(sys.argv[i+1])
 
-    fracture_setup = FractureSetup(
-        O_x=156,
-        O_y=25,
-        N_y_im=100,
-        N_x_im=200,
-        n_fractures_min=2,
-        n_fractures_max=4,
-        max_iterations=200
-    )
+    fracture_setup = FractureSetup()
 
     generator = FractureGenerator(fracture_setup)
     progress_bar = ProgressBar()
@@ -87,7 +79,7 @@ def main():
     for i in range(n_images):
         progress_bar.print_progress(i+1, n_images)
         img, _ = generator.generate_fractures()
-        np.save(f"fractures/im{i}.npy", img)
+        np.save(f"fractures/im{i:04}.npy", img)
     progress_bar.end()
     
     
