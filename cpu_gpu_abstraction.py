@@ -11,7 +11,7 @@ from dataclasses import dataclass
 class ExecutionSetup:
     gpu: bool = False
     precision: str = 'float64'
-    data_folder: str = f".{path.sep}rtm_data{path.sep}"
+    data_folder: str = f".{path.sep}data{path.sep}"
     precision_np = numpy.float64
     precision_cp = cupy.float64
 
