@@ -5,6 +5,7 @@ from setup import SimulationSetup
 from cpu_gpu_abstraction import ExecutionSetup
 from benchmark import ProgressBar
 from matplotlib import pyplot as plt
+from cmcrameri import cm
 
 
 class RtmVisualizer(ProgressBar):
@@ -13,15 +14,24 @@ class RtmVisualizer(ProgressBar):
         self.setup = setup
         self.exec_setup = exec_setup
 
-        self.U_RT = np.memmap(self.exec_setup.data_folder + U_RT_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s))
-        self.U_0 = np.memmap(self.exec_setup.data_folder + U_0_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s))
-        self.U = np.memmap(self.exec_setup.data_folder + U_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s))
+        print("Loading wave fields into memory...")
+        self.U_RT = np.array(np.memmap(self.exec_setup.data_folder + U_RT_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s)))
+        self.U_0 = np.array(np.memmap(self.exec_setup.data_folder + U_0_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s)))
+        self.U = np.array(np.memmap(self.exec_setup.data_folder + U_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s)))
+
+        print("Normalizing wave fields...")
+        self.U_RT = self.__normalize_array(self.U_RT)
+        self.U_0 = self.__normalize_array(self.U_0)
+        self.U = self.__normalize_array(self.U)
 
         self.fracture = np.load(f"fractures{path.sep}{fracture_name}")
         self.fracture = self.fracture[self.get_imaging_region_indices()]
         self.fracture = self.fracture.reshape(self.setup.N_x_im, self.setup.N_y_im)
 
         self.source_index = 25
+
+    def __normalize_array(self, a):
+        return np.multiply(a, 1/np.max(a))
 
     def get_imaging_region_indices(self):
         im_y_indices = range(self.setup.O_y, self.setup.O_y+self.setup.N_y_im)
@@ -38,12 +48,15 @@ class RtmVisualizer(ProgressBar):
         U_forward_frame = U_forward_frame.reshape(self.setup.N_x_im, self.setup.N_y_im)
         U_backward_frame = U_backward_frame.reshape(self.setup.N_x_im, self.setup.N_y_im)
         I = I.reshape(self.setup.N_x_im, self.setup.N_y_im)
+
+        U_vmax = 1.0
+        U_vmin = -U_vmax
         
         ax[0,0].set_title("U_0")
-        ax[0,0].imshow(U_0_frame.T)
+        ax[0,0].imshow(U_0_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
 
         ax[0,1].set_title("U_RT")
-        ax[0,1].imshow(U_RT_frame.T)
+        ax[0,1].imshow(U_RT_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
 
         ax[1,0].set_title("I")
         ax[1,0].imshow(I.T)
@@ -52,16 +65,17 @@ class RtmVisualizer(ProgressBar):
         ax[1,1].imshow(self.fracture.T)
 
         ax[2,0].set_title("U forward")
-        ax[2,0].imshow(U_forward_frame.T)
+        ax[2,0].imshow(U_forward_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
 
         ax[2,1].set_title("U backward")
-        ax[2,1].imshow(U_backward_frame.T)
+        ax[2,1].imshow(U_backward_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
 
         for axis in ax.flatten():
             axis.grid(color='black', linestyle='--', linewidth=0.5)
 
         fig.savefig(f'rtm_visualization{path.sep}frame_{tidx:03d}.jpg')
-        # plt.show()
+        # if tidx == 22:
+        #     plt.show()
         plt.close()
 
 
