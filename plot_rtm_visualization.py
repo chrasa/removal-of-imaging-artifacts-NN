@@ -25,6 +25,7 @@ class RtmVisualizer(ProgressBar):
         self.U = self.__normalize_array(self.U)
 
         self.fracture = np.load(f"fractures{path.sep}{fracture_name}")
+        self.fracture = self.fracture - self.setup.background_velocity_value
         self.fracture = self.fracture[self.get_imaging_region_indices()]
         self.fracture = self.fracture.reshape(self.setup.N_x_im, self.setup.N_y_im)
 
@@ -51,6 +52,12 @@ class RtmVisualizer(ProgressBar):
 
         U_vmax = 1.0
         U_vmin = -U_vmax
+
+        I_vmax = 1.85e-05
+        I_vmin = -I_vmax
+
+        f_vmax = 1000
+        f_vmin = -f_vmax
         
         ax[0,0].set_title("U_0")
         ax[0,0].imshow(U_0_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
@@ -59,10 +66,10 @@ class RtmVisualizer(ProgressBar):
         ax[0,1].imshow(U_RT_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
 
         ax[1,0].set_title("I")
-        ax[1,0].imshow(I.T)
+        ax[1,0].imshow(I.T, cmap=cm.vik, vmax=I_vmax, vmin=I_vmin)
 
         ax[1,1].set_title("Fracture")
-        ax[1,1].imshow(self.fracture.T)
+        ax[1,1].imshow(self.fracture.T, cmap=cm.vik, vmax=f_vmax, vmin=f_vmin)
 
         ax[2,0].set_title("U forward")
         ax[2,0].imshow(U_forward_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
