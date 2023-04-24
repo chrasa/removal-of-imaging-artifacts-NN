@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from os import path
 from setup import SimulationSetup
 from benchmark import ProgressBar
+from cmcrameri import cm
 
 def get_imaging_region_indices(setup: SimulationSetup):
     im_y_indices = range(setup.O_y, setup.O_y+setup.N_y_im)
@@ -52,20 +53,25 @@ def plot_rtm_image_from_single_file(training_data, setup: SimulationSetup, outpu
     clipping_max_rom = np.max(np.abs(rom_image))
 
     ax1.set_title("ROM Image")
-    ax1.imshow(rom_image.T, vmin=-clipping_max_rom, vmax=clipping_max_rom)
+    ax1.imshow(rom_image.T, vmin=-clipping_max_rom, vmax=clipping_max_rom, cmap=cm.broc)
+    ax1.grid(color='black', linestyle='--', linewidth=0.5)
 
     rtm_image = np.squeeze(training_data[1])
     rtm_image = rtm_image.reshape(setup.N_x_im, setup.N_y_im)
     clipping_max_rtm = np.max(np.abs(rtm_image))
 
     ax2.set_title("RTM Image")
-    ax2.imshow(rtm_image.T, vmin=-clipping_max_rtm, vmax=clipping_max_rtm)
+    ax2.imshow(rtm_image.T, vmin=-clipping_max_rtm, vmax=clipping_max_rtm, cmap=cm.broc)
+    ax2.grid(color='black', linestyle='--', linewidth=0.5)
 
     fracture_image = np.squeeze(training_data[0])
     fracture_image = np.reshape(fracture_image, (setup.N_x_im, setup.N_y_im))
+    fracture_image = fracture_image - setup.background_velocity_value
+    fracture_vmax = np.max([np.abs(np.max(fracture_image)), np.abs(np.min(fracture_image))])
 
     ax3.set_title("Fracture Image")
-    ax3.imshow(fracture_image.T)
+    ax3.imshow(fracture_image.T, vmax=fracture_vmax, vmin=-fracture_vmax, cmap=cm.broc)
+    ax3.grid(color='black', linestyle='--', linewidth=0.5)
 
     if output_file:
         plt.savefig(output_file, dpi=150)
