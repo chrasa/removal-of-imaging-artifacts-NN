@@ -136,14 +136,9 @@ def main():
         if arg == '-gpu':
             use_gpu = True
 
-    sim_setup = SimulationSetup(N_t=65,
-                                N_x_im=140,
-                                N_y_im=155,
-                                O_x=25,
-                                O_y=180)
+    sim_setup = SimulationSetup()
     exec_setup = ExecutionSetup(
-        gpu=use_gpu,
-        precision='float64')
+        gpu=use_gpu)
     solver = WaveSolver(sim_setup, exec_setup)
     solver.calculate_U0_D0()
     # solver.calculate_U_D("old_fwd/fractures/circle.npy")
