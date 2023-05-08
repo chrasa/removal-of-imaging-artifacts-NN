@@ -42,7 +42,7 @@ class RtmVisualizer(ProgressBar):
 
 
     def plot_image(self, tidx, U_0_frame, U_RT_frame, U_forward_frame, U_backward_frame, I):
-        fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(10, 12), dpi=150)
+        fig, ax = plt.subplots(nrows=1, ncols=4, figsize=(10, 3), dpi=300)
 
         U_0_frame = U_0_frame.reshape(self.setup.N_x_im, self.setup.N_y_im)
         U_RT_frame = U_RT_frame.reshape(self.setup.N_x_im, self.setup.N_y_im)
@@ -59,27 +59,28 @@ class RtmVisualizer(ProgressBar):
         f_vmax = 1000
         f_vmin = -f_vmax
         
-        ax[0,0].set_title("U_0")
-        ax[0,0].imshow(U_0_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
+        ax[0].set_title("U_0")
+        ax[0].imshow(U_0_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
 
-        ax[0,1].set_title("U_RT")
-        ax[0,1].imshow(U_RT_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
+        ax[1].set_title("U_RT")
+        ax[1].imshow(U_RT_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
 
-        ax[1,0].set_title("I")
-        ax[1,0].imshow(I.T, cmap=cm.vik, vmax=I_vmax, vmin=I_vmin)
+        ax[2].set_title("I")
+        ax[2].imshow(I.T, cmap=cm.vik, vmax=I_vmax, vmin=I_vmin)
 
-        ax[1,1].set_title("Fracture")
-        ax[1,1].imshow(self.fracture.T, cmap=cm.vik, vmax=f_vmax, vmin=f_vmin)
+        ax[3].set_title("Fracture")
+        ax[3].imshow(self.fracture.T, cmap=cm.vik, vmax=f_vmax, vmin=f_vmin)
 
-        ax[2,0].set_title("U forward")
-        ax[2,0].imshow(U_forward_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
+        # ax[2,0].set_title("U forward")
+        # ax[2,0].imshow(U_forward_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
 
-        ax[2,1].set_title("U backward")
-        ax[2,1].imshow(U_backward_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
+        # ax[2,1].set_title("U backward")
+        # ax[2,1].imshow(U_backward_frame.T, cmap=cm.broc, vmax=U_vmax, vmin=U_vmin)
 
         for axis in ax.flatten():
             axis.grid(color='black', linestyle='--', linewidth=0.5)
 
+        fig.tight_layout()
         fig.savefig(f'rtm_visualization{path.sep}frame_{tidx:03d}.jpg')
         # if tidx == 22:
         #     plt.show()
