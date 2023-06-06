@@ -1,5 +1,40 @@
 from dataclasses import dataclass
 
+# # Setup for point target
+# @dataclass
+# class ImageSetup:
+#     """Class for defining image properties"""
+#     N_x: int = 512
+#     N_y: int = 512
+#     N_x_im: int = 150
+#     N_y_im: int = 180
+#     O_x: int = 181
+#     O_y: int = 25
+
+
+# Setup for benchmarking
+# @dataclass
+# class ImageSetup:
+#     """Class for defining image properties"""
+#     N_x: int = 512
+#     N_y: int = 512
+#     N_x_im: int = 350
+#     N_y_im: int = 180
+#     O_x: int = 81
+#     O_y: int = 0
+
+# # Setup for analysis of the horizontal fracture
+# @dataclass
+# class ImageSetup:
+#     """Class for defining image properties"""
+#     N_x: int = 512
+#     N_y: int = 512
+#     N_x_im: int = 80
+#     N_y_im: int = 200
+#     O_x: int = 216
+#     O_y: int = 25
+
+# Default setup
 @dataclass
 class ImageSetup:
     """Class for defining image properties"""

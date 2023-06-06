@@ -103,6 +103,7 @@ class RTM(CPU_GPU_Abstractor):
         self._end_progress_bar()
         U.flush()
 
+    @timeit
     def __calculate_imaging_function(self, U_RT_file_name="U_RT.npy", U_0_file_name="U_0.npy"):
         U_RT = numpy.memmap(self.exec_setup.data_folder + U_RT_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s))
         U_0 = numpy.memmap(self.exec_setup.data_folder + U_0_file_name, self.exec_setup.precision_np, 'r', shape=(2*self.setup.N_t, self.setup.N_x_im*self.setup.N_y_im, self.setup.N_s))
@@ -142,10 +143,10 @@ def main():
         if arg == '-gpu':
             use_gpu = True
 
-    sim_setup = SimulationSetup(N_t=35)
-    exec_setup = ExecutionSetup(gpu=use_gpu, precision='float32')
+    sim_setup = SimulationSetup()
+    exec_setup = ExecutionSetup(gpu=use_gpu)
     solver = RTM(sim_setup, exec_setup)
-    solver.calculate_I(D="U_RT.npy", I_file_name="I.npy")
+    solver.calculate_I(D="D_0_fine.npy", I_file_name="I.npy")
 
 
 if __name__ == "__main__":
