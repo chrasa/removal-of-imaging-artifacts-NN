@@ -46,7 +46,7 @@ def plot_rtm_image(I_rom_path, I_rtm_path, fracture_path, setup: SimulationSetup
     plt.show()
 
 def plot_rtm_image_from_single_file(training_data, setup: SimulationSetup, output_file=False):
-    f, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(14,4))
 
     rom_image = np.squeeze(training_data[2])
     rom_image = rom_image.reshape(setup.N_x_im, setup.N_y_im)
@@ -72,6 +72,8 @@ def plot_rtm_image_from_single_file(training_data, setup: SimulationSetup, outpu
     ax3.set_title("Fracture Image")
     ax3.imshow(fracture_image.T, vmax=fracture_vmax, vmin=-fracture_vmax, cmap=cm.broc)
     ax3.grid(color='black', linestyle='--', linewidth=0.5)
+
+    f.tight_layout()
 
     if output_file:
         plt.savefig(output_file, dpi=150)
