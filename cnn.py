@@ -8,6 +8,7 @@ from scipy.signal import convolve2d as conv2
 from scipy.stats import wasserstein_distance;
 import sys, getopt
 from PIL import Image
+from setup import ImageSetup
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -199,10 +200,14 @@ def get_images(file_name, resize):
     return x_image, y_image
 
 
-def load_images(image_directory: str,
-                n_images: int,
-                validation_split: float,
-                resize: bool):
+def load_images(n_images: int, validation_split: float, resize: bool):
+    print("Loading training data from disc...")
+    setup = ImageSetup()
+
+    training_data = np.load("./training_data/training_data.npy")
+    training_data = training_data[:n_images,:,:]
+    # print(training_data.shape)
+    # training_data = np.reshape(training_data, (n_images, 3, setup.N_x_im, setup.N_y_im))
 
     x_img_array_list = []
     y_img_array_list = []
@@ -210,11 +215,17 @@ def load_images(image_directory: str,
     im_indices = get_imaging_indices(25, 81, 512, 175, 350)
 
     for i in range(n_images):
-        x_img_array = np.load(f"{image_directory}/data/im{i}.npy").reshape((350, 175))
+        # x_img_array = np.load(f"{image_directory}/data/im{i}.npy").reshape((350, 175))
+        x_img_array = training_data[i,1,:]
+        x_img_array = x_img_array.reshape(350,180)
+        x_img_array = x_img_array[:,:175]
         x_img_array_list.append(preprocess_data(x_img_array))
 
-        y_img_array = np.load(f"{image_directory}/labels/im{i}.npy")[im_indices]
-        y_img_array = y_img_array.reshape((350, 175))
+        # y_img_array = np.load(f"{image_directory}/labels/im{i}.npy")[im_indices]
+        y_img_array = training_data[i,0,:]
+        y_img_array = y_img_array.reshape(350,180)
+        y_img_array = y_img_array[:,:175]
+        # y_img_array = y_img_array.reshape((350, 175))
         y_img_array_list.append(preprocess_data(y_img_array))
 
 
@@ -222,6 +233,8 @@ def load_images(image_directory: str,
     y_image_tensor = np.stack(y_img_array_list, axis=0)
 
     training_index = int(x_image_tensor.shape[0]*(1-validation_split))
+    # x_train_images = training_data[:training_index, 0, :, :]
+    # y_train_images = training_data[:training_index, 1, :, :]
     x_train_images = x_image_tensor[:training_index, :, :]
     y_train_images = y_image_tensor[:training_index, :, :]
 
@@ -233,11 +246,11 @@ def load_images(image_directory: str,
     x_test_images = x_test_images[..., tf.newaxis]
     y_test_images = y_test_images[..., tf.newaxis]
 
-    if resize:
-        x_train_images = tf.image.resize(x_train_images, (344, 168))
-        y_train_images = tf.image.resize(y_train_images, (344, 168))
-        x_test_images = tf.image.resize(x_test_images, (344, 168))
-        y_test_images = tf.image.resize(y_test_images, (344, 168))
+    # if resize:
+    #     x_train_images = tf.image.resize(x_train_images, (setup.N_x_im, setup.N_y_im))
+    #     y_train_images = tf.image.resize(y_train_images, (setup.N_x_im, setup.N_y_im))
+    #     x_test_images = tf.image.resize(x_test_images, (setup.N_x_im, setup.N_y_im))
+    #     y_test_images = tf.image.resize(y_test_images, (setup.N_x_im, setup.N_y_im))
 
     return x_train_images, y_train_images, x_test_images, y_test_images
 
@@ -346,7 +359,7 @@ if __name__ == "__main__":
     model_name = sys.argv[1]
     loss_name = sys.argv[2]
 
-    x_train, y_train, x_test, y_test = load_images("./images", 2500, 0.2, resize)
+    x_train, y_train, x_test, y_test = load_images(500, 0.2, resize)
     
     if str(sys.argv[4]) == "load":
         artifact_remover = tf.keras.models.load_model(f"./saved_model/{model_name}_{loss_name}_{stride}_trained_model.h5", compile=False)
