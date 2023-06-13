@@ -2,38 +2,34 @@ import sys
 import numpy as np
 
 class DataNormalizer:
-    def __init__(self, n) -> None:
+    def __init__(self) -> None:
         self.training_data_file_name = "training_data.npy"
         print("Loading training data...")
-        self.training_data = np.memmap(self.training_data_file_name, np.float64, 'r', shape=(n, 3, 350*180))
+        self.training_data = np.load(self.training_data_file_name)
 
     def normalize_data(self):
         self.__remove_background_velocity()
 
-        rom_data = self.training_data[:,2,:]
-        rom_max = np.max(rom_data)
+        rom_max = np.max(self.training_data[:,2,:])
         print(f"ROM max value: {rom_max}")
-        rom_min = np.min(rom_data)
+        rom_min = np.min(self.training_data[:,2,:])
         print(f"ROM min value: {rom_min}")
         rom_abs_max = np.max(np.abs([rom_max, rom_min]))
-        self.training_data[:,2,:] = rom_data/rom_abs_max
+        self.training_data[:,2,:] = self.training_data[:,2,:]/rom_abs_max
         
-        rtm_data = self.training_data[:,1,:]
-        rtm_max = np.max(rtm_data)
+        rtm_max = np.max(self.training_data[:,1,:])
         print(f"RTM max value: {rtm_max}")
-        rtm_min = np.min(rtm_data)
+        rtm_min = np.min(self.training_data[:,1,:])
         print(f"RTM min value: {rtm_min}")
         rtm_abs_max = np.max(np.abs([rtm_max, rtm_min]))
-        self.training_data[:,1,:] = rtm_data/rtm_abs_max
+        self.training_data[:,1,:] = self.training_data[:,1,:]/rtm_abs_max
 
-        frac_data = self.training_data[:,0,:]
-        frac_max = np.max(frac_data)
+        frac_max = np.max(self.training_data[:,0,:])
         print(f"Fracture max value: {frac_max}")
-        frac_min = np.min(frac_data)
+        frac_min = np.min(self.training_data[:,0,:])
         print(f"Fracture min value: {frac_min}")
         frac_abs_max = np.max(np.abs([frac_max, frac_min]))
-        self.training_data[:,0,:] = frac_data/frac_abs_max
-        self.training_data.flush()
+        self.training_data[:,0,:] = self.training_data[:,0,:]/frac_abs_max
 
 
         print("New max and min values")
@@ -72,10 +68,7 @@ class DataNormalizer:
 
 
 def main():
-    for i, arg in enumerate(sys.argv):
-        if arg == '-n':
-            n_images = int(sys.argv[i+1])
-    data_normalizer = DataNormalizer(n_images)
+    data_normalizer = DataNormalizer()
     data_normalizer.remove_invalid_data()
     data_normalizer.normalize_data()
     data_normalizer.save_training_data()
