@@ -8,7 +8,7 @@ import numpy as np
 from scipy.signal import convolve2d as conv2
 from scipy.stats import wasserstein_distance;
 import sys, getopt
-from PIL import Image
+# from PIL import Image
 from setup import ImageSetup
 
 import os
