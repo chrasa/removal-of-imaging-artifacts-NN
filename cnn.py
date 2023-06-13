@@ -1,3 +1,4 @@
+import gc
 import tensorflow as tf
 from tensorflow import keras
 from keras import layers
@@ -204,8 +205,9 @@ def load_images(n_images: int, validation_split: float, resize: bool):
     print("Loading training data from disc...")
     setup = ImageSetup()
 
-    training_data = np.load("./training_data/training_data.npy")
+    training_data = np.load("./training_data/training_data_normalized.npy")
     training_data = training_data[:n_images,:,:]
+    gc.collect()
     # print(training_data.shape)
     # training_data = np.reshape(training_data, (n_images, 3, setup.N_x_im, setup.N_y_im))
 
