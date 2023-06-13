@@ -364,6 +364,7 @@ if __name__ == "__main__":
     x_train, y_train, x_test, y_test = load_images(500, 0.2, resize)
     
     if str(sys.argv[4]) == "load":
+        print(f"\nLoading model {model_name} with loss {loss_name}...\n")
         artifact_remover = tf.keras.models.load_model(f"./saved_model/{model_name}_{loss_name}_{stride}_trained_model.h5", compile=False)
 
         # set loss and optimizer here
@@ -378,13 +379,13 @@ if __name__ == "__main__":
 
     #artifact_remover.evaluate(x_test, y_test)
 
-    one_frac_x, one_frac_y = get_images("one_frac.npy", resize)
-    point_scatter_x, point_scatter_y = get_images("point_scatter.npy", resize)
-    ten_frac_x, ten_frac_y = get_images("ten_frac.npy", resize)
-    two_close_x, two_close_y = get_images("two_close.npy", resize)
+    # one_frac_x, one_frac_y = get_images("one_frac.npy", resize)
+    # point_scatter_x, point_scatter_y = get_images("point_scatter.npy", resize)
+    # ten_frac_x, ten_frac_y = get_images("ten_frac.npy", resize)
+    # two_close_x, two_close_y = get_images("two_close.npy", resize)
 
-    x_special = np.stack([one_frac_x, point_scatter_x, ten_frac_x, two_close_x], axis=0)
-    y_special = np.stack([one_frac_y, point_scatter_y, ten_frac_y, two_close_y], axis=0)
+    # x_special = np.stack([one_frac_x, point_scatter_x, ten_frac_x, two_close_x], axis=0)
+    # y_special = np.stack([one_frac_y, point_scatter_y, ten_frac_y, two_close_y], axis=0)
 
     emds = []
     mses = []
@@ -400,7 +401,7 @@ if __name__ == "__main__":
         ssims.append(calculate_ssim(y_test[i*im_per_eval:im_per_eval*i + im_per_eval+1], current_decoded_images))
         sobel.append(calculate_sobel(y_test[i*im_per_eval:im_per_eval*i + im_per_eval+1], current_decoded_images))
 
-    special_images = artifact_remover(x_special)
+    # special_images = artifact_remover(x_special)
     decoded_images = artifact_remover(x_test[:im_per_eval+1])
 
     print("Average earth mover distance: ", np.mean(emds))
@@ -408,5 +409,5 @@ if __name__ == "__main__":
     print("Average SSIM: ", np.mean(ssims))
     print("Average sobel loss: ", np.mean(sobel))
 
-    plot_comparison(4, x_special, special_images, y_special, model_name, loss_name, stride, 0)
+    # plot_comparison(4, x_special, special_images, y_special, model_name, loss_name, stride, 0)
     plot_comparison(im_per_eval, x_test[:im_per_eval+1], decoded_images, y_test[:im_per_eval+1], model_name, loss_name, stride, 4)
