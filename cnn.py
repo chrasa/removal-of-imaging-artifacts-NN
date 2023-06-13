@@ -4,7 +4,7 @@ from tensorflow import keras
 from keras import layers
 import keras.backend as K
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from scipy.signal import convolve2d as conv2
 from scipy.stats import wasserstein_distance;
 import sys, getopt
@@ -269,38 +269,38 @@ def preprocess_data(image_array: np.array):
     return (image_array - np.min(image_array)) / (np.max(image_array) - np.min(image_array))
 
 
-def plot_comparison(n_images,
-                    imaging_result,
-                    reconstructed_images,
-                    label_images,
-                    model_name,
-                    loss_name,
-                    stride,
-                    start_index):
+# def plot_comparison(n_images,
+#                     imaging_result,
+#                     reconstructed_images,
+#                     label_images,
+#                     model_name,
+#                     loss_name,
+#                     stride,
+#                     start_index):
     
-    save_path = f"images/pngs/{model_name}_{loss_name}_{stride}"
+#     save_path = f"images/pngs/{model_name}_{loss_name}_{stride}"
 
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
+#     if not os.path.exists(save_path):
+#         os.makedirs(save_path)
 
-    for i in range(n_images):
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
-        plt.gray()
+#     for i in range(n_images):
+#         fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+#         plt.gray()
 
-        plot_image(ax1, imaging_result[i], "Imaging algorithm result")
+#         plot_image(ax1, imaging_result[i], "Imaging algorithm result")
 
-        plot_image(ax2, reconstructed_images[i], "Output of CNN")
+#         plot_image(ax2, reconstructed_images[i], "Output of CNN")
 
-        plot_image(ax3, label_images[i], "Actual fracture image")
+#         plot_image(ax3, label_images[i], "Actual fracture image")
 
-        plt.savefig(f"{save_path}/im{i+start_index}")
+#         plt.savefig(f"{save_path}/im{i+start_index}")
 
-        fig, ax = plt.subplots(1, 1)
-        plot_image(ax, reconstructed_images[i], f"Output of {model_name}")
-        plt.savefig(f"{save_path}/out{i+start_index}")
+#         fig, ax = plt.subplots(1, 1)
+#         plot_image(ax, reconstructed_images[i], f"Output of {model_name}")
+#         plt.savefig(f"{save_path}/out{i+start_index}")
 
 
-    print("Images saved.")
+#     print("Images saved.")
 
 
 def plot_image(ax, image, title):
@@ -410,4 +410,4 @@ if __name__ == "__main__":
     print("Average sobel loss: ", np.mean(sobel))
 
     # plot_comparison(4, x_special, special_images, y_special, model_name, loss_name, stride, 0)
-    plot_comparison(im_per_eval, x_test[:im_per_eval+1], decoded_images, y_test[:im_per_eval+1], model_name, loss_name, stride, 4)
+    # plot_comparison(im_per_eval, x_test[:im_per_eval+1], decoded_images, y_test[:im_per_eval+1], model_name, loss_name, stride, 4)
