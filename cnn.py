@@ -2,10 +2,10 @@ import gc
 import tensorflow as tf
 from tensorflow import keras
 from keras import layers
-import keras.backend as K
+# import keras.backend as K
 import numpy as np
 # import matplotlib.pyplot as plt
-from scipy.signal import convolve2d as conv2
+# from scipy.signal import convolve2d as conv2
 from scipy.stats import wasserstein_distance;
 import sys, getopt
 # from PIL import Image
@@ -25,35 +25,35 @@ def conv_with_batchnorm(inputs, n_filters, kernel_size):
     return x
 
 
-def residual_layer_block(inputs, n_filters, kernel_size, strides=1):
-    y = conv_with_batchnorm(inputs, n_filters, kernel_size)
+# def residual_layer_block(inputs, n_filters, kernel_size, strides=1):
+#     y = conv_with_batchnorm(inputs, n_filters, kernel_size)
 
-    y = layers.Conv2D(n_filters, kernel_size, strides, padding='same')(y) 
-    y = layers.Add()([inputs, y])
-    y = layers.BatchNormalization()(y)
-    y = layers.Activation('relu')(y)
+#     y = layers.Conv2D(n_filters, kernel_size, strides, padding='same')(y) 
+#     y = layers.Add()([inputs, y])
+#     y = layers.BatchNormalization()(y)
+#     y = layers.Activation('relu')(y)
 
-    return y
+#     return y
 
 
-def residual_network(stride):
-    shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
-    inputs = layers.Input(shape=shape)
+# def residual_network(stride):
+#     shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
+#     inputs = layers.Input(shape=shape)
 
-    x = layers.Conv2D(32, stride, strides=stride, padding='same')(inputs)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
+#     x = layers.Conv2D(32, stride, strides=stride, padding='same')(inputs)
+#     x = layers.BatchNormalization()(x)
+#     x = layers.Activation('relu')(x)
 
-    for _ in range(3):
-        x = residual_layer_block(x, 32, 3, 1)
+#     for _ in range(3):
+#         x = residual_layer_block(x, 32, 3, 1)
 
-    x = layers.UpSampling2D(stride)(x)
-    x = conv_with_batchnorm(x, 32, stride)
+#     x = layers.UpSampling2D(stride)(x)
+#     x = conv_with_batchnorm(x, 32, stride)
 
-    outputs = layers.Conv2D(1, kernel_size=(1, 1), padding='same', activation='sigmoid')(x)
-    model = tf.keras.Model(inputs, outputs)
+#     outputs = layers.Conv2D(1, kernel_size=(1, 1), padding='same', activation='sigmoid')(x)
+#     model = tf.keras.Model(inputs, outputs)
 
-    return model
+#     return model
 
 
 def convolutional_network():
@@ -75,78 +75,78 @@ def convolutional_network():
     return model
 
 
-def convolutional_autoencoder(stride):
-    shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
-    inputs = layers.Input(shape=shape) 
+# def convolutional_autoencoder(stride):
+#     shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
+#     inputs = layers.Input(shape=shape) 
 
-    x = layers.Conv2D(16, stride, stride, padding='same')(inputs)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
+#     x = layers.Conv2D(16, stride, stride, padding='same')(inputs)
+#     x = layers.BatchNormalization()(x)
+#     x = layers.Activation('relu')(x)
 
-    x = conv_with_batchnorm(x, 32, 5)
-    x = conv_with_batchnorm(x, 64, 5)
-    x = conv_with_batchnorm(x, 32, 5)
+#     x = conv_with_batchnorm(x, 32, 5)
+#     x = conv_with_batchnorm(x, 64, 5)
+#     x = conv_with_batchnorm(x, 32, 5)
     
-    x = layers.UpSampling2D(stride)(x)
-    x = conv_with_batchnorm(x, 16, stride)
+#     x = layers.UpSampling2D(stride)(x)
+#     x = conv_with_batchnorm(x, 16, stride)
 
-    outputs = layers.Conv2D(1, kernel_size=(1, 1), padding='same', activation='sigmoid')(x)
+#     outputs = layers.Conv2D(1, kernel_size=(1, 1), padding='same', activation='sigmoid')(x)
 
-    model = tf.keras.Model(inputs, outputs)
+#     model = tf.keras.Model(inputs, outputs)
 
-    return model
-
-
+#     return model
 
 
-def dual_conv_block(inputs, n_filters, kernel_size):
-    x = conv_with_batchnorm(inputs, n_filters, kernel_size)
-    x = conv_with_batchnorm(x, n_filters, kernel_size)
 
-    return x
+
+# def dual_conv_block(inputs, n_filters, kernel_size):
+#     x = conv_with_batchnorm(inputs, n_filters, kernel_size)
+#     x = conv_with_batchnorm(x, n_filters, kernel_size)
+
+#     return x
     
 
-def contracting_layers(x, n_filters, kernel_size, downsample_stride):
-    f = dual_conv_block(x, n_filters, kernel_size)
-    p = layers.Conv2D(n_filters, downsample_stride, strides=downsample_stride, padding='same')(f)
-    p = layers.BatchNormalization()(p)
-    p = layers.Activation('relu')(p)
+# def contracting_layers(x, n_filters, kernel_size, downsample_stride):
+#     f = dual_conv_block(x, n_filters, kernel_size)
+#     p = layers.Conv2D(n_filters, downsample_stride, strides=downsample_stride, padding='same')(f)
+#     p = layers.BatchNormalization()(p)
+#     p = layers.Activation('relu')(p)
 
-    return f, p
-
-
-def expanding_layers(x, copied_features, n_filters, kernel_size, upsample_stride):
-    x = layers.UpSampling2D(upsample_stride)(x)
-    x = conv_with_batchnorm(x, n_filters, upsample_stride)
-
-    x = layers.concatenate([x, copied_features])
-
-    x = dual_conv_block(x, n_filters, kernel_size)
-
-    return x
+#     return f, p
 
 
-def adapted_unet(stride):
-    shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
-    inputs = layers.Input(shape=shape)
+# def expanding_layers(x, copied_features, n_filters, kernel_size, upsample_stride):
+#     x = layers.UpSampling2D(upsample_stride)(x)
+#     x = conv_with_batchnorm(x, n_filters, upsample_stride)
 
-    f1, p1 = contracting_layers(inputs, 16, 5, stride) 
+#     x = layers.concatenate([x, copied_features])
 
-    x = conv_with_batchnorm(p1, 32, 5)
-    x = conv_with_batchnorm(x, 64, 5)
+#     x = dual_conv_block(x, n_filters, kernel_size)
 
-    middle = conv_with_batchnorm(x, 128, 5)
+#     return x
 
-    x = conv_with_batchnorm(middle, 64, 5)
-    x = conv_with_batchnorm(x, 32, 5)
 
-    u8 = expanding_layers(x, f1, 16, 5, stride)
+# def adapted_unet(stride):
+#     shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
+#     inputs = layers.Input(shape=shape)
 
-    outputs = layers.Conv2D(1, 1, padding='same', activation='sigmoid')(u8)
+#     f1, p1 = contracting_layers(inputs, 16, 5, stride) 
+
+#     x = conv_with_batchnorm(p1, 32, 5)
+#     x = conv_with_batchnorm(x, 64, 5)
+
+#     middle = conv_with_batchnorm(x, 128, 5)
+
+#     x = conv_with_batchnorm(middle, 64, 5)
+#     x = conv_with_batchnorm(x, 32, 5)
+
+#     u8 = expanding_layers(x, f1, 16, 5, stride)
+
+#     outputs = layers.Conv2D(1, 1, padding='same', activation='sigmoid')(u8)
     
-    model = tf.keras.Model(inputs, outputs)
+#     model = tf.keras.Model(inputs, outputs)
 
-    return model
+#     return model
 
 
 def calculate_emd(target, predicted):
@@ -311,16 +311,17 @@ def plot_image(ax, image, title):
 
 
 def train_model(x_train, y_train, model_name, loss_name, stride):
-    if model_name == "UNet":
-        artifact_remover = adapted_unet(stride)
-    elif model_name == "ConvNN":
-        artifact_remover = convolutional_network()
-    elif model_name == "ResNet":
-        artifact_remover = residual_network(stride)
-    elif model_name == "ConvAuto":
-        artifact_remover = convolutional_autoencoder(stride)
-    else:
-        raise NotImplementedError()
+    # if model_name == "UNet":
+    #     artifact_remover = adapted_unet(stride)
+    # elif model_name == "ConvNN":
+    #     artifact_remover = convolutional_network()
+    # elif model_name == "ResNet":
+    #     artifact_remover = residual_network(stride)
+    # elif model_name == "ConvAuto":
+    #     artifact_remover = convolutional_autoencoder(stride)
+    # else:
+    #     raise NotImplementedError()
+    artifact_remover = convolutional_network()
 
     # loss, early stopping and optimizer
     optim = keras.optimizers.Adam(learning_rate=0.001)
@@ -360,8 +361,9 @@ if __name__ == "__main__":
 
     model_name = sys.argv[1]
     loss_name = sys.argv[2]
+    n_images = int(sys.argv[5])
 
-    x_train, y_train, x_test, y_test = load_images(500, 0.2, resize)
+    x_train, y_train, x_test, y_test = load_images(n_images, 0.2, resize)
     
     if str(sys.argv[4]) == "load":
         print(f"\nLoading model {model_name} with loss {loss_name}...\n")
