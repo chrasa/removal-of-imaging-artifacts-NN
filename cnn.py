@@ -1,7 +1,7 @@
 import gc
 import tensorflow as tf
-from tensorflow import keras
-from keras import layers
+# from tensorflow import keras
+# from keras import layers
 # import keras.backend as K
 import numpy as np
 # import matplotlib.pyplot as plt
@@ -18,9 +18,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 def conv_with_batchnorm(inputs, n_filters, kernel_size):
-    x = layers.Conv2D(n_filters, kernel_size, padding='same')(inputs)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
+    x = tf.keras.layers.Conv2D(n_filters, kernel_size, padding='same')(inputs)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Activation('relu')(x)
 
     return x
 
@@ -57,7 +57,7 @@ def conv_with_batchnorm(inputs, n_filters, kernel_size):
 
 
 def convolutional_network():
-    inputs = layers.Input(shape=(350, 175, 1))
+    inputs = tf.keras.layers.Input(shape=(350, 175, 1))
 
     x = conv_with_batchnorm(inputs, 8, 5)
     x = conv_with_batchnorm(x, 16, 5)
@@ -68,7 +68,7 @@ def convolutional_network():
     x = conv_with_batchnorm(x, 16, 5)
     x = conv_with_batchnorm(x, 8, 5)
 
-    outputs = layers.Conv2D(1, (1, 1), padding='same', activation='sigmoid')(x)
+    outputs = tf.keras.layers.Conv2D(1, (1, 1), padding='same', activation='sigmoid')(x)
 
     model = tf.keras.Model(inputs, outputs)
     
@@ -324,7 +324,7 @@ def train_model(x_train, y_train, model_name, loss_name, stride):
     artifact_remover = convolutional_network()
 
     # loss, early stopping and optimizer
-    optim = keras.optimizers.Adam(learning_rate=0.001)
+    optim = tf.keras.optimizers.Adam(learning_rate=0.001)
     loss = sobel_loss if loss_name == "sobel" else ssim_loss
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
                                                       patience=50,
@@ -370,7 +370,7 @@ if __name__ == "__main__":
         artifact_remover = tf.keras.models.load_model(f"./saved_model/{model_name}_{loss_name}_{stride}_trained_model.h5", compile=False)
 
         # set loss and optimizer here
-        optim = keras.optimizers.Adam(learning_rate=0.001)
+        optim = tf.keras.optimizers.Adam(learning_rate=0.001)
         loss = sobel_loss if loss_name == "sobel" else ssim_loss
         metrics = ["mse"]
         artifact_remover.compile(metrics=metrics, loss=loss, optimizer=optim)
