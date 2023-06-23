@@ -26,7 +26,7 @@ def train_model(x_train, y_train, imaging_method, model_name, loss_name, stride)
     artifact_remover.compile(loss=loss, optimizer=optim)
     artifact_remover.fit(x_train,
             y_train,
-            epochs=4,
+            epochs=200,
             shuffle=False,
             batch_size=10,
             verbose=2,
