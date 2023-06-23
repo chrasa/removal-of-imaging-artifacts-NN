@@ -60,10 +60,10 @@ def load_images(imaging_method: str, n_images: int, validation_split: float, res
     y_test_images = y_test_images[..., tf.newaxis]
 
     if resize:
-        x_train_images = tf.image.resize(x_train_images, (setup.N_x_im, setup.N_y_im))
-        y_train_images = tf.image.resize(y_train_images, (setup.N_x_im, setup.N_y_im))
-        x_test_images = tf.image.resize(x_test_images, (setup.N_x_im, setup.N_y_im))
-        y_test_images = tf.image.resize(y_test_images, (setup.N_x_im, setup.N_y_im))
+        x_train_images = tf.image.resize(x_train_images, (344, 168))
+        y_train_images = tf.image.resize(y_train_images, (344, 168))
+        x_test_images = tf.image.resize(x_test_images, (344, 168))
+        y_test_images = tf.image.resize(y_test_images, (344, 168))
 
     return x_train_images, y_train_images, x_test_images, y_test_images
 
