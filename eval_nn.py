@@ -61,29 +61,6 @@ def plot_image(ax, image, title):
     ax.get_yaxis().set_visible(False) 
 
 
-def train_model(x_train, y_train, model_name, loss_name, stride):
-    artifact_remover = NetworkGenerator.get_model(model_name, stride)
-
-    # loss, early stopping and optimizer
-    optim = tf.keras.optimizers.Adam(learning_rate=0.001)
-    loss = sobel_loss if loss_name == "sobel" else ssim_loss
-    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
-                                                      patience=50,
-                                                      restore_best_weights=True)
-
-    artifact_remover.compile(loss=loss, optimizer=optim)
-    artifact_remover.fit(x_train,
-            y_train,
-            epochs=4,
-            shuffle=False,
-            batch_size=10,
-            verbose=2,
-            callbacks=[early_stopping],
-            validation_data=(x_test, y_test))
-
-    artifact_remover.save(f"./saved_model/{model_name}_{loss_name}_{stride}_trained_model.h5")
-    return artifact_remover
-
 if __name__ == "__main__":
 
     if not os.path.exists("./images"):
@@ -106,19 +83,14 @@ if __name__ == "__main__":
 
     x_train, y_train, x_test, y_test = load_images(n_images, 0.2, resize)
     
-    if str(sys.argv[4]) == "load":
-        print(f"\nLoading model {model_name} with loss {loss_name}...\n")
-        artifact_remover = tf.keras.models.load_model(f"./saved_model/{model_name}_{loss_name}_{stride}_trained_model.h5", compile=False)
+    print(f"\nLoading model {model_name} with loss {loss_name}...\n")
+    artifact_remover = tf.keras.models.load_model(f"./saved_model/{model_name}_{loss_name}_{stride}_trained_model.h5", compile=False)
 
-        # set loss and optimizer here
-        optim = tf.keras.optimizers.Adam(learning_rate=0.001)
-        loss = sobel_loss if loss_name == "sobel" else ssim_loss
-        metrics = ["mse"]
-        artifact_remover.compile(metrics=metrics, loss=loss, optimizer=optim)
-
-    else:
-        print(f"\nTraining model {model_name} with loss {loss_name}...\n")
-        artifact_remover = train_model(x_train, y_train, model_name, loss_name, stride)
+    # set loss and optimizer here
+    optim = tf.keras.optimizers.Adam(learning_rate=0.001)
+    loss = sobel_loss if loss_name == "sobel" else ssim_loss
+    metrics = ["mse"]
+    artifact_remover.compile(metrics=metrics, loss=loss, optimizer=optim)
 
     #artifact_remover.evaluate(x_test, y_test)
 
