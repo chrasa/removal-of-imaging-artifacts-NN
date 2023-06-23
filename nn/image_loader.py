@@ -3,20 +3,6 @@ import numpy as np
 import tensorflow as tf
 from setup import ImageSetup
 
-def get_images(file_name, resize):
-    im_indices = get_imaging_indices(25, 81, 512, 175, 350)
-    x_image = np.load(f"./images/data/{file_name}").reshape((350, 175))
-    y_image = np.load(f"./images/labels/{file_name}")[im_indices].reshape((350, 175))
-
-    x_image = preprocess_data(x_image)[..., tf.newaxis]
-    y_image = preprocess_data(y_image)[..., tf.newaxis]
-
-    if resize:
-        x_image = tf.image.resize(x_image, (344, 168))
-        y_image = tf.image.resize(y_image, (344, 168))
-
-    return x_image, y_image
-
 
 def load_images(n_images: int, validation_split: float, resize: bool):
     print("Loading training data from disc...")
@@ -32,20 +18,15 @@ def load_images(n_images: int, validation_split: float, resize: bool):
     x_img_array_list = []
     y_img_array_list = []
 
-    im_indices = get_imaging_indices(25, 81, 512, 175, 350)
-
     for i in range(n_images):
-        # x_img_array = np.load(f"{image_directory}/data/im{i}.npy").reshape((350, 175))
         x_img_array = training_data[i,1,:]
         x_img_array = x_img_array.reshape(350,180)
         x_img_array = x_img_array[:,:175]
         x_img_array_list.append(preprocess_data(x_img_array))
 
-        # y_img_array = np.load(f"{image_directory}/labels/im{i}.npy")[im_indices]
         y_img_array = training_data[i,0,:]
         y_img_array = y_img_array.reshape(350,180)
         y_img_array = y_img_array[:,:175]
-        # y_img_array = y_img_array.reshape((350, 175))
         y_img_array_list.append(preprocess_data(y_img_array))
 
 
@@ -73,14 +54,6 @@ def load_images(n_images: int, validation_split: float, resize: bool):
         y_test_images = tf.image.resize(y_test_images, (setup.N_x_im, setup.N_y_im))
 
     return x_train_images, y_train_images, x_test_images, y_test_images
-
-
-def get_imaging_indices(O_x, O_y, image_width, N_x_im, N_y_im):
-    im_y_indices = range(O_y, O_y+N_y_im)
-    im_x_indices = range(O_x, O_x+N_x_im)
-    indices = [y*image_width + x for y in im_y_indices for x in im_x_indices] 
-
-    return indices
 
 
 def preprocess_data(image_array: np.array):
