@@ -1,19 +1,11 @@
-import gc
+import os
 import tensorflow as tf
-# from tensorflow import keras
-# from keras import layers
-# import keras.backend as K
-import numpy as np
-import matplotlib.pyplot as plt
-# from scipy.signal import convolve2d as conv2
-import sys, getopt
-# from PIL import Image
-from setup import ImageSetup
 from nn.networks import NetworkGenerator
 from nn.losses import *
 from nn.image_loader import load_images
+from nn.arg_parser import ArgParser
+from nn.util import setup_directories
 
-import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # tf.config.run_functions_eagerly(True)
@@ -21,6 +13,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 def train_model(x_train, y_train, model_name, loss_name, stride):
+    print(f"\nTraining model '{model_name}' with loss '{loss_name}' and a stride of {stride}\n")
     artifact_remover = NetworkGenerator.get_model(model_name, stride)
 
     # loss, early stopping and optimizer
@@ -43,28 +36,16 @@ def train_model(x_train, y_train, model_name, loss_name, stride):
     artifact_remover.save(f"./saved_model/{model_name}_{loss_name}_{stride}_trained_model.h5")
     return artifact_remover
 
+
 if __name__ == "__main__":
-
-    if not os.path.exists("./images"):
-        os.makedirs("./images/data")
-        os.makedirs("./images/labels")
-        os.makedirs("./images/pngs")
-
-    if not os.path.exists("./saved_model/"):
-        os.makedirs("./saved_model/")
-
-    stride = int(sys.argv[3])
+    setup_directories()
+    parser = ArgParser()
 
     resize = False
-    if (stride == 2):
+    if (parser.args.stride == 2):
         resize = True
 
-    model_name = sys.argv[1]
-    loss_name = sys.argv[2]
-    n_images = int(sys.argv[5])
-
-    x_train, y_train, x_test, y_test = load_images(n_images, 0.2, resize)
+    x_train, y_train, x_test, y_test = load_images(parser.args.nimages, 0.2, resize)
     
-    print(f"\nTraining model {model_name} with loss {loss_name}...\n")
-    artifact_remover = train_model(x_train, y_train, model_name, loss_name, stride)
+    train_model(x_train, y_train, parser.args.model, parser.args.loss, parser.args.stride)
 

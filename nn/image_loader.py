@@ -23,6 +23,7 @@ def load_images(n_images: int, validation_split: float, resize: bool):
     setup = ImageSetup()
 
     training_data = np.load("./training_data/training_data_normalized.npy")
+    print(f"Shape of training_data: {training_data.shape}")
     training_data = training_data[:n_images,:,:]
     gc.collect()
     # print(training_data.shape)
