@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import sys, getopt
 # from PIL import Image
 from setup import ImageSetup
-from nn.networks import adapted_unet, convolutional_network, convolutional_autoencoder, residual_network
+from nn.networks import NetworkGenerator
 from nn.losses import *
 from nn.image_loader import load_images
 
@@ -62,16 +62,7 @@ def plot_image(ax, image, title):
 
 
 def train_model(x_train, y_train, model_name, loss_name, stride):
-    if model_name == "UNet":
-        artifact_remover = adapted_unet(stride)
-    elif model_name == "ConvNN":
-        artifact_remover = convolutional_network()
-    elif model_name == "ResNet":
-        artifact_remover = residual_network(stride)
-    elif model_name == "ConvAuto":
-        artifact_remover = convolutional_autoencoder(stride)
-    else:
-        raise NotImplementedError()
+    artifact_remover = NetworkGenerator.get_model(model_name, stride)
 
     # loss, early stopping and optimizer
     optim = tf.keras.optimizers.Adam(learning_rate=0.001)
