@@ -1,132 +1,145 @@
 import tensorflow as tf
 
-def conv_with_batchnorm(inputs, n_filters, kernel_size):
-    x = tf.keras.layers.Conv2D(n_filters, kernel_size, padding='same')(inputs)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation('relu')(x)
+class NetworkGenerator:
+    @staticmethod
+    def get_model(model_name, stride):
+        if model_name == "UNet":
+            return NetworkGenerator.adapted_unet(stride)
+        elif model_name == "ConvNN":
+            return NetworkGenerator.convolutional_network()
+        elif model_name == "ResNet":
+            return NetworkGenerator.residual_network(stride)
+        elif model_name == "ConvAuto":
+            return NetworkGenerator.convolutional_autoencoder(stride)
+        else:
+            raise NotImplementedError()
 
-    return x
+    @staticmethod
+    def conv_with_batchnorm(inputs, n_filters, kernel_size):
+        x = tf.keras.layers.Conv2D(n_filters, kernel_size, padding='same')(inputs)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Activation('relu')(x)
 
+        return x
 
-def residual_layer_block(inputs, n_filters, kernel_size, strides=1):
-    y = conv_with_batchnorm(inputs, n_filters, kernel_size)
+    @staticmethod
+    def residual_layer_block(inputs, n_filters, kernel_size, strides=1):
+        y = NetworkGenerator.conv_with_batchnorm(inputs, n_filters, kernel_size)
 
-    y = tf.keras.layers.Conv2D(n_filters, kernel_size, strides, padding='same')(y) 
-    y = tf.keras.layers.Add()([inputs, y])
-    y = tf.keras.layers.BatchNormalization()(y)
-    y = tf.keras.layers.Activation('relu')(y)
+        y = tf.keras.layers.Conv2D(n_filters, kernel_size, strides, padding='same')(y) 
+        y = tf.keras.layers.Add()([inputs, y])
+        y = tf.keras.layers.BatchNormalization()(y)
+        y = tf.keras.layers.Activation('relu')(y)
 
-    return y
+        return y
 
+    @staticmethod
+    def residual_network(stride):
+        shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
+        inputs = tf.keras.layers.Input(shape=shape)
 
-def residual_network(stride):
-    shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
-    inputs = tf.keras.layers.Input(shape=shape)
+        x = tf.keras.layers.Conv2D(32, stride, strides=stride, padding='same')(inputs)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Activation('relu')(x)
 
-    x = tf.keras.layers.Conv2D(32, stride, strides=stride, padding='same')(inputs)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation('relu')(x)
+        for _ in range(3):
+            x = NetworkGenerator.residual_layer_block(x, 32, 3, 1)
 
-    for _ in range(3):
-        x = residual_layer_block(x, 32, 3, 1)
+        x = tf.keras.layers.UpSampling2D(stride)(x)
+        x = NetworkGenerator.conv_with_batchnorm(x, 32, stride)
 
-    x = tf.keras.layers.UpSampling2D(stride)(x)
-    x = conv_with_batchnorm(x, 32, stride)
+        outputs = tf.keras.layers.Conv2D(1, kernel_size=(1, 1), padding='same', activation='sigmoid')(x)
+        model = tf.keras.Model(inputs, outputs)
 
-    outputs = tf.keras.layers.Conv2D(1, kernel_size=(1, 1), padding='same', activation='sigmoid')(x)
-    model = tf.keras.Model(inputs, outputs)
+        return model
 
-    return model
+    @staticmethod
+    def convolutional_network():
+        inputs = tf.keras.layers.Input(shape=(350, 175, 1))
 
+        x = NetworkGenerator.conv_with_batchnorm(inputs, 8, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 8, 5)
 
-def convolutional_network():
-    inputs = tf.keras.layers.Input(shape=(350, 175, 1))
+        outputs = tf.keras.layers.Conv2D(1, (1, 1), padding='same', activation='sigmoid')(x)
 
-    x = conv_with_batchnorm(inputs, 8, 5)
-    x = conv_with_batchnorm(x, 16, 5)
-    x = conv_with_batchnorm(x, 16, 5)
-    x = conv_with_batchnorm(x, 16, 5)
-    x = conv_with_batchnorm(x, 16, 5)
-    x = conv_with_batchnorm(x, 16, 5)
-    x = conv_with_batchnorm(x, 16, 5)
-    x = conv_with_batchnorm(x, 8, 5)
+        model = tf.keras.Model(inputs, outputs)
+        
+        return model
 
-    outputs = tf.keras.layers.Conv2D(1, (1, 1), padding='same', activation='sigmoid')(x)
+    @staticmethod
+    def convolutional_autoencoder(stride):
+        shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
+        inputs = tf.keras.layers.Input(shape=shape) 
 
-    model = tf.keras.Model(inputs, outputs)
-    
-    return model
+        x = tf.keras.layers.Conv2D(16, stride, stride, padding='same')(inputs)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Activation('relu')(x)
 
+        x = NetworkGenerator.conv_with_batchnorm(x, 32, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 64, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 32, 5)
+        
+        x = tf.keras.layers.UpSampling2D(stride)(x)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, stride)
 
-def convolutional_autoencoder(stride):
-    shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
-    inputs = tf.keras.layers.Input(shape=shape) 
+        outputs = tf.keras.layers.Conv2D(1, kernel_size=(1, 1), padding='same', activation='sigmoid')(x)
 
-    x = tf.keras.layers.Conv2D(16, stride, stride, padding='same')(inputs)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation('relu')(x)
+        model = tf.keras.Model(inputs, outputs)
 
-    x = conv_with_batchnorm(x, 32, 5)
-    x = conv_with_batchnorm(x, 64, 5)
-    x = conv_with_batchnorm(x, 32, 5)
-    
-    x = tf.keras.layers.UpSampling2D(stride)(x)
-    x = conv_with_batchnorm(x, 16, stride)
+        return model
 
-    outputs = tf.keras.layers.Conv2D(1, kernel_size=(1, 1), padding='same', activation='sigmoid')(x)
+    @staticmethod
+    def dual_conv_block(inputs, n_filters, kernel_size):
+        x = NetworkGenerator.conv_with_batchnorm(inputs, n_filters, kernel_size)
+        x = NetworkGenerator.conv_with_batchnorm(x, n_filters, kernel_size)
 
-    model = tf.keras.Model(inputs, outputs)
+        return x
+        
+    @staticmethod
+    def contracting_layers(x, n_filters, kernel_size, downsample_stride):
+        f = NetworkGenerator.dual_conv_block(x, n_filters, kernel_size)
+        p = tf.keras.layers.Conv2D(n_filters, downsample_stride, strides=downsample_stride, padding='same')(f)
+        p = tf.keras.layers.BatchNormalization()(p)
+        p = tf.keras.layers.Activation('relu')(p)
 
-    return model
+        return f, p
 
+    @staticmethod
+    def expanding_layers(x, copied_features, n_filters, kernel_size, upsample_stride):
+        x = tf.keras.layers.UpSampling2D(upsample_stride)(x)
+        x = NetworkGenerator.conv_with_batchnorm(x, n_filters, upsample_stride)
 
+        x = tf.keras.layers.concatenate([x, copied_features])
 
+        x = NetworkGenerator.dual_conv_block(x, n_filters, kernel_size)
 
-def dual_conv_block(inputs, n_filters, kernel_size):
-    x = conv_with_batchnorm(inputs, n_filters, kernel_size)
-    x = conv_with_batchnorm(x, n_filters, kernel_size)
+        return x
 
-    return x
-    
+    @staticmethod
+    def adapted_unet(stride):
+        shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
+        inputs = tf.keras.layers.Input(shape=shape)
 
-def contracting_layers(x, n_filters, kernel_size, downsample_stride):
-    f = dual_conv_block(x, n_filters, kernel_size)
-    p = tf.keras.layers.Conv2D(n_filters, downsample_stride, strides=downsample_stride, padding='same')(f)
-    p = tf.keras.layers.BatchNormalization()(p)
-    p = tf.keras.layers.Activation('relu')(p)
+        f1, p1 = NetworkGenerator.contracting_layers(inputs, 16, 5, stride) 
 
-    return f, p
+        x = NetworkGenerator.conv_with_batchnorm(p1, 32, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 64, 5)
 
+        middle = NetworkGenerator.conv_with_batchnorm(x, 128, 5)
 
-def expanding_layers(x, copied_features, n_filters, kernel_size, upsample_stride):
-    x = tf.keras.layers.UpSampling2D(upsample_stride)(x)
-    x = conv_with_batchnorm(x, n_filters, upsample_stride)
+        x = NetworkGenerator.conv_with_batchnorm(middle, 64, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 32, 5)
 
-    x = tf.keras.layers.concatenate([x, copied_features])
+        u8 = NetworkGenerator.expanding_layers(x, f1, 16, 5, stride)
 
-    x = dual_conv_block(x, n_filters, kernel_size)
+        outputs = tf.keras.layers.Conv2D(1, 1, padding='same', activation='sigmoid')(u8)
+        
+        model = tf.keras.Model(inputs, outputs)
 
-    return x
-
-
-def adapted_unet(stride):
-    shape = (350, 175, 1) if stride == 5 else (344, 168, 1)
-    inputs = tf.keras.layers.Input(shape=shape)
-
-    f1, p1 = contracting_layers(inputs, 16, 5, stride) 
-
-    x = conv_with_batchnorm(p1, 32, 5)
-    x = conv_with_batchnorm(x, 64, 5)
-
-    middle = conv_with_batchnorm(x, 128, 5)
-
-    x = conv_with_batchnorm(middle, 64, 5)
-    x = conv_with_batchnorm(x, 32, 5)
-
-    u8 = expanding_layers(x, f1, 16, 5, stride)
-
-    outputs = tf.keras.layers.Conv2D(1, 1, padding='same', activation='sigmoid')(u8)
-    
-    model = tf.keras.Model(inputs, outputs)
-
-    return model
+        return model
