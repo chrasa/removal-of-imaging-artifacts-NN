@@ -12,7 +12,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 
-def train_model(x_train, y_train, model_name, loss_name, stride):
+def train_model(x_train, y_train, imaging_method, model_name, loss_name, stride):
     print(f"\nTraining model '{model_name}' with loss '{loss_name}' and a stride of {stride}\n")
     artifact_remover = NetworkGenerator.get_model(model_name, stride)
 
@@ -33,7 +33,7 @@ def train_model(x_train, y_train, model_name, loss_name, stride):
             callbacks=[early_stopping],
             validation_data=(x_test, y_test))
 
-    artifact_remover.save(f"./saved_model/{model_name}_{loss_name}_{stride}_trained_model.h5")
+    artifact_remover.save(f"./saved_model/{imaging_method.lower()}_{model_name}_{loss_name}_{stride}_trained_model.h5")
     return artifact_remover
 
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     if (parser.args.stride == 2):
         resize = True
 
-    x_train, y_train, x_test, y_test = load_images(parser.args.nimages, 0.2, resize)
+    x_train, y_train, x_test, y_test = load_images(parser.args.imaging_method, parser.args.nimages, 0.2, resize)
     
-    train_model(x_train, y_train, parser.args.model, parser.args.loss, parser.args.stride)
+    train_model(x_train, y_train, parser.args.imaging_method, parser.args.model, parser.args.loss, parser.args.stride)
 

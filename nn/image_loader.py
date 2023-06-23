@@ -4,7 +4,7 @@ import tensorflow as tf
 from setup import ImageSetup
 
 
-def load_images(n_images: int, validation_split: float, resize: bool):
+def load_images(imaging_method: str, n_images: int, validation_split: float, resize: bool):
     print("Loading training data from disc...")
     setup = ImageSetup()
 
@@ -14,12 +14,24 @@ def load_images(n_images: int, validation_split: float, resize: bool):
     gc.collect()
     # print(training_data.shape)
     # training_data = np.reshape(training_data, (n_images, 3, setup.N_x_im, setup.N_y_im))
+    # x_image_tensor = training_data[:,1,:]
+    # x_image_tensor = x_image_tensor[:,:,:175]
+
+    # y_image_tensor = training_data[:,0,:]
+    # y_image_tensor = x_image_tensor[:,:,:175]
+
+    if imaging_method.lower() == 'rtm':
+        imaging_method_idx = 1
+    elif imaging_method.lower() == 'rom':
+        imaging_method_idx = 2
+    else:
+        raise ValueError(f"The imaging_method '{imaging_method}' is not a valid method")
 
     x_img_array_list = []
     y_img_array_list = []
 
     for i in range(n_images):
-        x_img_array = training_data[i,1,:]
+        x_img_array = training_data[i,imaging_method_idx,:]
         x_img_array = x_img_array.reshape(350,180)
         x_img_array = x_img_array[:,:175]
         x_img_array_list.append(preprocess_data(x_img_array))
