@@ -6,7 +6,7 @@
 #SBATCH -t 10:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --gpus-per-node=1
-#SBATCH -J generate_training_data_rtm
+#SBATCH -J train_nn_rtm
 #SBATCH -D ./
 
 conda activate tf
