@@ -2,7 +2,7 @@
 #SBATCH -M snowy
 #SBATCH -A snic2022-22-1060
 #SBATCH -p core
-#SBATCH -n 2
+#SBATCH -n 4
 #SBATCH -t 10:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --gpus-per-node=1
