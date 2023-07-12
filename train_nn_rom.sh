@@ -3,7 +3,7 @@
 #SBATCH -A snic2022-22-1060
 #SBATCH -p core
 #SBATCH -n 4
-#SBATCH -t 10:00:00
+#SBATCH -t 16:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --gpus-per-node=1
 #SBATCH -J train_nn_rom
