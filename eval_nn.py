@@ -1,15 +1,8 @@
 import gc
-import tensorflow as tf
-# from tensorflow import keras
-# from keras import layers
-# import keras.backend as K
+import sys
 import numpy as np
+import tensorflow as tf
 import matplotlib.pyplot as plt
-# from scipy.signal import convolve2d as conv2
-import sys, getopt
-# from PIL import Image
-from setup import ImageSetup
-from nn.networks import NetworkGenerator
 from nn.losses import *
 from nn.image_loader import load_images
 
@@ -21,15 +14,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 def plot_comparison(n_images,
-                    imaging_result,
-                    reconstructed_images,
-                    label_images,
+                    imaging_output,
+                    cnn_output,
+                    fracture_image,
+                    imaging_method,
                     model_name,
                     loss_name,
-                    stride,
-                    start_index):
+                    stride):
     
-    save_path = f"images/pngs/{model_name}_{loss_name}_{stride}"
+    save_path = f"images/pngs/{imaging_method}_{model_name}_{loss_name}_{stride}"
 
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -38,18 +31,17 @@ def plot_comparison(n_images,
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
         plt.gray()
 
-        plot_image(ax1, imaging_result[i], "Imaging algorithm result")
+        plot_image(ax1, imaging_output[i], "RTM output")
+        plot_image(ax2, cnn_output[i], "CNN output")
+        plot_image(ax3, fracture_image[i], "Fracture image")
 
-        plot_image(ax2, reconstructed_images[i], "Output of CNN")
-
-        plot_image(ax3, label_images[i], "Actual fracture image")
-
-        plt.savefig(f"{save_path}/im{i+start_index}")
+        plt.savefig(f"{save_path}/im{i}")
+        plt.close()
 
         fig, ax = plt.subplots(1, 1)
-        plot_image(ax, reconstructed_images[i], f"Output of {model_name}")
-        plt.savefig(f"{save_path}/out{i+start_index}")
-
+        plot_image(ax, cnn_output[i], f"Output of {model_name}")
+        plt.savefig(f"{save_path}/out{i}")
+        plt.close()
 
     print("Images saved.")
 
@@ -61,30 +53,16 @@ def plot_image(ax, image, title):
     ax.get_yaxis().set_visible(False) 
 
 
-if __name__ == "__main__":
-
-    if not os.path.exists("./images"):
-        os.makedirs("./images/data")
-        os.makedirs("./images/labels")
-        os.makedirs("./images/pngs")
-
-    if not os.path.exists("./saved_model/"):
-        os.makedirs("./saved_model/")
-
-    stride = int(sys.argv[3])
-
-    resize = False
+def evaluate_nn(imaging_method, model_name, loss_name, stride, n_images):
     if (stride == 2):
         resize = True
+    else:
+        resize = False
 
-    model_name = sys.argv[1]
-    loss_name = sys.argv[2]
-    n_images = int(sys.argv[5])
-
-    x_train, y_train, x_test, y_test = load_images(n_images, 0.2, resize)
+    _, _, x_test, y_test = load_images('rtm', n_images, 0.2, resize)
     
     print(f"\nLoading model {model_name} with loss {loss_name}...\n")
-    artifact_remover = tf.keras.models.load_model(f"./saved_model/{model_name}_{loss_name}_{stride}_trained_model.h5", compile=False)
+    artifact_remover = tf.keras.models.load_model(f"./saved_model/{imaging_method}_{model_name}_{loss_name}_{stride}_trained_model.h5", compile=False)
 
     # set loss and optimizer here
     optim = tf.keras.optimizers.Adam(learning_rate=0.001)
@@ -92,37 +70,61 @@ if __name__ == "__main__":
     metrics = ["mse"]
     artifact_remover.compile(metrics=metrics, loss=loss, optimizer=optim)
 
-    #artifact_remover.evaluate(x_test, y_test)
-
-    # one_frac_x, one_frac_y = get_images("one_frac.npy", resize)
-    # point_scatter_x, point_scatter_y = get_images("point_scatter.npy", resize)
-    # ten_frac_x, ten_frac_y = get_images("ten_frac.npy", resize)
-    # two_close_x, two_close_y = get_images("two_close.npy", resize)
-
-    # x_special = np.stack([one_frac_x, point_scatter_x, ten_frac_x, two_close_x], axis=0)
-    # y_special = np.stack([one_frac_y, point_scatter_y, ten_frac_y, two_close_y], axis=0)
-
     emds = []
     mses = []
     ssims = []
     sobel = []
 
-    im_per_eval = 20
-
-    for i in range(6):
-        current_decoded_images = artifact_remover(x_test[i*im_per_eval:im_per_eval*i + im_per_eval+1])
-        emds.append(calculate_emd(y_test[i*im_per_eval:im_per_eval*i + im_per_eval+1], current_decoded_images))
-        mses.append(calculate_mse(y_test[i*im_per_eval:im_per_eval*i + im_per_eval+1], current_decoded_images))
-        ssims.append(calculate_ssim(y_test[i*im_per_eval:im_per_eval*i + im_per_eval+1], current_decoded_images))
-        sobel.append(calculate_sobel(y_test[i*im_per_eval:im_per_eval*i + im_per_eval+1], current_decoded_images))
-
-    # special_images = artifact_remover(x_special)
-    decoded_images = artifact_remover(x_test[:im_per_eval+1])
+    decoded_images = artifact_remover(x_test)
+    emds.append(calculate_emd(y_test, decoded_images))
+    mses.append(calculate_mse(y_test, decoded_images))
+    ssims.append(calculate_ssim(y_test, decoded_images))
+    sobel.append(calculate_sobel(y_test, decoded_images))
 
     print("Average earth mover distance: ", np.mean(emds))
     print("Average mean squared error: ", np.mean(mses))
     print("Average SSIM: ", np.mean(ssims))
     print("Average sobel loss: ", np.mean(sobel))
 
-    # plot_comparison(4, x_special, special_images, y_special, model_name, loss_name, stride, 0)
-    # plot_comparison(im_per_eval, x_test[:im_per_eval+1], decoded_images, y_test[:im_per_eval+1], model_name, loss_name, stride, 4)
+    plot_comparison(int(0.2*n_images), x_test, decoded_images, y_test, imaging_method, model_name, loss_name, stride)
+
+if __name__ == "__main__":
+    n_images = int(sys.argv[1])
+
+    ### RTM ###
+    evaluate_nn('rtm', 'ConvAuto', 'sobel', 2, n_images)
+    evaluate_nn('rtm', 'ConvAuto', 'sobel', 5, n_images)
+    evaluate_nn('rtm', 'ConvAuto', 'ssim', 2, n_images)
+    evaluate_nn('rtm', 'ConvAuto', 'ssim', 5, n_images)
+
+    evaluate_nn('rtm', 'ConvNN', 'sobel', 5, n_images)
+    evaluate_nn('rtm', 'ConvNN', 'ssim', 5, n_images)
+
+    evaluate_nn('rtm', 'ResNet', 'sobel', 2, n_images)
+    evaluate_nn('rtm', 'ResNet', 'sobel', 5, n_images)
+    evaluate_nn('rtm', 'ResNet', 'ssim', 2, n_images)
+    evaluate_nn('rtm', 'ResNet', 'ssim', 5, n_images)
+
+    # evaluate_nn('rtm', 'UNet', 'sobel', 2, n_images)
+    # evaluate_nn('rtm', 'UNet', 'sobel', 5, n_images)
+    # evaluate_nn('rtm', 'UNet', 'ssim', 2, n_images)
+    # evaluate_nn('rtm', 'UNet', 'ssim', 5, n_images)
+
+    ### ROM ###
+    evaluate_nn('rom', 'ConvAuto', 'sobel', 2, n_images)
+    evaluate_nn('rom', 'ConvAuto', 'sobel', 5, n_images)
+    evaluate_nn('rom', 'ConvAuto', 'ssim', 2, n_images)
+    evaluate_nn('rom', 'ConvAuto', 'ssim', 5, n_images)
+
+    evaluate_nn('rom', 'ConvNN', 'sobel', 5, n_images)
+    evaluate_nn('rom', 'ConvNN', 'ssim', 5, n_images)
+
+    evaluate_nn('rom', 'ResNet', 'sobel', 2, n_images)
+    evaluate_nn('rom', 'ResNet', 'sobel', 5, n_images)
+    evaluate_nn('rom', 'ResNet', 'ssim', 2, n_images)
+    evaluate_nn('rom', 'ResNet', 'ssim', 5, n_images)
+
+    evaluate_nn('rom', 'UNet', 'sobel', 2, n_images)
+    evaluate_nn('rom', 'UNet', 'sobel', 5, n_images)
+    evaluate_nn('rom', 'UNet', 'ssim', 2, n_images)
+    evaluate_nn('rom', 'UNet', 'ssim', 5, n_images)
