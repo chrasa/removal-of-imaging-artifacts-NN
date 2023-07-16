@@ -5,11 +5,11 @@ from setup import ImageSetup
 
 
 def load_images(imaging_method: str, n_images: int, validation_split: float, resize: bool, training_data_path="./training_data/training_data_normalized.npy"):
-    print("Loading training data from disc...")
+    # print("Loading training data from disc...")
     setup = ImageSetup()
 
     training_data = np.load(training_data_path)
-    print(f"Shape of training_data: {training_data.shape}")
+    # print(f"Shape of training_data: {training_data.shape}")
     training_data = training_data[:n_images,:,:]
     gc.collect()
     # print(training_data.shape)
