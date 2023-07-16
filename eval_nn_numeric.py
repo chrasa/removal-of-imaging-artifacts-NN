@@ -1,13 +1,10 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-import gc
 import sys
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 from nn.losses import *
 from nn.image_loader import load_images
-from cmcrameri import cm
 
 
 def print_table_head():
