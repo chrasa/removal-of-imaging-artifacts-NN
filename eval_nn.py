@@ -5,6 +5,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from nn.losses import *
 from nn.image_loader import load_images
+from cmcrameri import cm
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -28,27 +29,18 @@ def plot_comparison(n_images,
         os.makedirs(save_path)
 
     for i in range(n_images):
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
-        plt.gray()
-
-        plot_image(ax1, imaging_output[i], "RTM output")
-        plot_image(ax2, cnn_output[i], "CNN output")
-        plot_image(ax3, fracture_image[i], "Fracture image")
-
-        plt.savefig(f"{save_path}/im{i}")
-        plt.close()
-
         fig, ax = plt.subplots(1, 1)
-        plot_image(ax, cnn_output[i], f"Output of {model_name}")
-        plt.savefig(f"{save_path}/out{i}")
+        plot_image(ax, cnn_output[i]-0.352, f"{imaging_method} {model_name} {loss_name} {stride}")
+        plt.savefig(f"./images/nn_output/f{i}_{imaging_method}_{model_name}_{loss_name}_{stride}_out.png", bbox_inches='tight', dpi=150)
         plt.close()
 
     print("Images saved.")
 
 
 def plot_image(ax, image, title):
-    ax.imshow(tf.squeeze(image))
-    ax.set_title(title)
+    image_vmax = np.max([np.abs(np.max(image)), np.abs(np.min(image))])
+    ax.imshow(tf.squeeze(image), cmap=cm.broc, vmax=image_vmax, vmin=-image_vmax)
+    # ax.set_title(title)
     ax.get_xaxis().set_visible(False) 
     ax.get_yaxis().set_visible(False) 
 
@@ -59,9 +51,9 @@ def evaluate_nn(imaging_method, model_name, loss_name, stride, n_images):
     else:
         resize = False
 
-    _, _, x_test, y_test = load_images('rtm', n_images, 0.2, resize)
+    _, _, x_test, y_test = load_images(imaging_method, n_images, 1.0, resize, "./training_data/training_data_normalized_REPORT.npy")
     
-    print(f"\nLoading model {model_name} with loss {loss_name}...\n")
+    print(f"\nLoading model {imaging_method.upper()} {model_name} with loss {loss_name}...\n")
     artifact_remover = tf.keras.models.load_model(f"./saved_model/{imaging_method}_{model_name}_{loss_name}_{stride}_trained_model.h5", compile=False)
 
     # set loss and optimizer here
@@ -86,45 +78,45 @@ def evaluate_nn(imaging_method, model_name, loss_name, stride, n_images):
     print("Average SSIM: ", np.mean(ssims))
     print("Average sobel loss: ", np.mean(sobel))
 
-    plot_comparison(int(0.2*n_images), x_test, decoded_images, y_test, imaging_method, model_name, loss_name, stride)
+    plot_comparison(int(1.0*n_images), x_test, decoded_images, y_test, imaging_method, model_name, loss_name, stride)
 
 if __name__ == "__main__":
     n_images = int(sys.argv[1])
 
     ### RTM ###
-    evaluate_nn('rtm', 'ConvAuto', 'sobel', 2, n_images)
-    evaluate_nn('rtm', 'ConvAuto', 'sobel', 5, n_images)
-    evaluate_nn('rtm', 'ConvAuto', 'ssim', 2, n_images)
-    evaluate_nn('rtm', 'ConvAuto', 'ssim', 5, n_images)
+    # evaluate_nn('rtm', 'ConvAuto', 'sobel', 2, n_images)
+    # evaluate_nn('rtm', 'ConvAuto', 'sobel', 5, n_images)
+    # evaluate_nn('rtm', 'ConvAuto', 'ssim', 2, n_images)
+    # evaluate_nn('rtm', 'ConvAuto', 'ssim', 5, n_images)
 
-    evaluate_nn('rtm', 'ConvNN', 'sobel', 5, n_images)
-    evaluate_nn('rtm', 'ConvNN', 'ssim', 5, n_images)
+    # evaluate_nn('rtm', 'ConvNN', 'sobel', 5, n_images)
+    # evaluate_nn('rtm', 'ConvNN', 'ssim', 5, n_images)
 
-    evaluate_nn('rtm', 'ResNet', 'sobel', 2, n_images)
-    evaluate_nn('rtm', 'ResNet', 'sobel', 5, n_images)
-    evaluate_nn('rtm', 'ResNet', 'ssim', 2, n_images)
-    evaluate_nn('rtm', 'ResNet', 'ssim', 5, n_images)
+    # evaluate_nn('rtm', 'ResNet', 'sobel', 2, n_images)
+    # evaluate_nn('rtm', 'ResNet', 'sobel', 5, n_images)
+    # evaluate_nn('rtm', 'ResNet', 'ssim', 2, n_images)
+    # evaluate_nn('rtm', 'ResNet', 'ssim', 5, n_images)
 
-    # evaluate_nn('rtm', 'UNet', 'sobel', 2, n_images)
-    # evaluate_nn('rtm', 'UNet', 'sobel', 5, n_images)
-    # evaluate_nn('rtm', 'UNet', 'ssim', 2, n_images)
-    # evaluate_nn('rtm', 'UNet', 'ssim', 5, n_images)
+    evaluate_nn('rtm', 'UNet', 'sobel', 2, n_images)
+    evaluate_nn('rtm', 'UNet', 'sobel', 5, n_images)
+    evaluate_nn('rtm', 'UNet', 'ssim', 2, n_images)
+    evaluate_nn('rtm', 'UNet', 'ssim', 5, n_images)
 
     ### ROM ###
-    evaluate_nn('rom', 'ConvAuto', 'sobel', 2, n_images)
-    evaluate_nn('rom', 'ConvAuto', 'sobel', 5, n_images)
-    evaluate_nn('rom', 'ConvAuto', 'ssim', 2, n_images)
-    evaluate_nn('rom', 'ConvAuto', 'ssim', 5, n_images)
+    # evaluate_nn('rom', 'ConvAuto', 'sobel', 2, n_images)
+    # evaluate_nn('rom', 'ConvAuto', 'sobel', 5, n_images)
+    # evaluate_nn('rom', 'ConvAuto', 'ssim', 2, n_images)
+    # evaluate_nn('rom', 'ConvAuto', 'ssim', 5, n_images)
 
-    evaluate_nn('rom', 'ConvNN', 'sobel', 5, n_images)
-    evaluate_nn('rom', 'ConvNN', 'ssim', 5, n_images)
+    # evaluate_nn('rom', 'ConvNN', 'sobel', 5, n_images)
+    # evaluate_nn('rom', 'ConvNN', 'ssim', 5, n_images)
 
-    evaluate_nn('rom', 'ResNet', 'sobel', 2, n_images)
-    evaluate_nn('rom', 'ResNet', 'sobel', 5, n_images)
-    evaluate_nn('rom', 'ResNet', 'ssim', 2, n_images)
-    evaluate_nn('rom', 'ResNet', 'ssim', 5, n_images)
+    # evaluate_nn('rom', 'ResNet', 'sobel', 2, n_images)
+    # evaluate_nn('rom', 'ResNet', 'sobel', 5, n_images)
+    # evaluate_nn('rom', 'ResNet', 'ssim', 2, n_images)
+    # evaluate_nn('rom', 'ResNet', 'ssim', 5, n_images)
 
-    evaluate_nn('rom', 'UNet', 'sobel', 2, n_images)
-    evaluate_nn('rom', 'UNet', 'sobel', 5, n_images)
-    evaluate_nn('rom', 'UNet', 'ssim', 2, n_images)
-    evaluate_nn('rom', 'UNet', 'ssim', 5, n_images)
+    # evaluate_nn('rom', 'UNet', 'sobel', 2, n_images)
+    # evaluate_nn('rom', 'UNet', 'sobel', 5, n_images)
+    # evaluate_nn('rom', 'UNet', 'ssim', 2, n_images)
+    # evaluate_nn('rom', 'UNet', 'ssim', 5, n_images)
