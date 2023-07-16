@@ -41,7 +41,7 @@ def evaluate_nn(imaging_method, model_name, loss_name, stride, n_images):
     else:
         resize = False
 
-    _, _, x_test, y_test = load_images(imaging_method, n_images, 1.0, resize, "./training_data/training_data_normalized.npy")
+    _, _, x_test, y_test = load_images(imaging_method, n_images, 1.0, resize, "./training_data/training_data_normalized_METRIC.npy")
     
     artifact_remover = tf.keras.models.load_model(f"./saved_model/{imaging_method}_{model_name}_{loss_name}_{stride}_trained_model.h5", compile=False)
 
