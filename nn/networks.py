@@ -7,6 +7,10 @@ class NetworkGenerator:
             return NetworkGenerator.adapted_unet(stride)
         elif model_name == "ConvNN":
             return NetworkGenerator.convolutional_network()
+        elif model_name == "ConvNNshallow":
+            return NetworkGenerator.convolutional_network_shallow()
+        elif model_name == "ConvNNdeep":
+            return NetworkGenerator.convolutional_network_deep()
         elif model_name == "ResNet":
             return NetworkGenerator.residual_network(stride)
         elif model_name == "ConvAuto":
@@ -53,6 +57,44 @@ class NetworkGenerator:
 
         return model
 
+    @staticmethod
+    def convolutional_network_shallow():
+        inputs = tf.keras.layers.Input(shape=(350, 175, 1))
+
+        x = NetworkGenerator.conv_with_batchnorm(inputs, 8, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 8, 5)
+
+        outputs = tf.keras.layers.Conv2D(1, (1, 1), padding='same', activation='sigmoid')(x)
+
+        model = tf.keras.Model(inputs, outputs)
+        
+        return model
+
+    @staticmethod
+    def convolutional_network_deep():
+        inputs = tf.keras.layers.Input(shape=(350, 175, 1))
+
+        x = NetworkGenerator.conv_with_batchnorm(inputs, 8, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 16, 5)
+        x = NetworkGenerator.conv_with_batchnorm(x, 8, 5)
+
+        outputs = tf.keras.layers.Conv2D(1, (1, 1), padding='same', activation='sigmoid')(x)
+
+        model = tf.keras.Model(inputs, outputs)
+        
+        return model
+    
     @staticmethod
     def convolutional_network():
         inputs = tf.keras.layers.Input(shape=(350, 175, 1))
